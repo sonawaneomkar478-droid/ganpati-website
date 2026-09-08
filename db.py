@@ -40,7 +40,15 @@ SAMPLE_GALLERY = [
 ]
 
 def get_db():
-    client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=2000)
+    if "mongodb+srv" in MONGO_URI or ("mongodb://" in MONGO_URI and "localhost" not in MONGO_URI):
+        client = MongoClient(
+            MONGO_URI,
+            serverSelectionTimeoutMS=5000,
+            tls=True,
+            tlsAllowInvalidCertificates=True
+        )
+    else:
+        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=2000)
     return client[DB_NAME]
 
 def init_db():
