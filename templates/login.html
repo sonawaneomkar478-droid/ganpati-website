@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>श्री गणेश दर्शन व वर्गणी संकलन पोर्टली</title>
+    <link href="https://fonts.googleapis.com/css2?family=Khand:wght@500;600;700&family=Outfit:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Divine Background Mandap */
+        .divine-background {
+            min-height: 100vh;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #800000 0%, #4a0000 60%, #1a0000 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        /* Flower Shower Canvas */
+        #flowerCanvas {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* Glowing Divine Sun Rays / Aura */
+        .divine-aura {
+            position: absolute;
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle, rgba(255, 183, 3, 0.4) 0%, rgba(255, 69, 0, 0.2) 40%, transparent 70%);
+            border-radius: 50%;
+            animation: pulseAura 4s ease-in-out infinite alternate;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        @keyframes pulseAura {
+            0% { transform: scale(0.9); opacity: 0.7; }
+            100% { transform: scale(1.15); opacity: 1; }
+        }
+
+        /* Animated Temple Diya / Lamp Flames */
+        .diya-container {
+            position: absolute;
+            bottom: 40px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 5%;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .diya {
+            font-size: 3rem;
+            filter: drop-shadow(0 0 15px #ffb703);
+            animation: diyaFlicker 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes diyaFlicker {
+            0% { transform: scale(1) rotate(-2deg); opacity: 0.9; }
+            100% { transform: scale(1.1) rotate(2deg); opacity: 1; }
+        }
+
+        /* Divine Floating Glass Window Modal */
+        .divine-window {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 460px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 28px;
+            border: 4px double #ffb703;
+            box-shadow: 
+                0 0 30px rgba(255, 183, 3, 0.5),
+                0 25px 60px rgba(0, 0, 0, 0.7);
+            padding: 2.5rem 2rem;
+            text-align: center;
+            animation: windowAppear 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes windowAppear {
+            0% { opacity: 0; transform: translateY(40px) scale(0.92); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .ganpati-idol-header {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #ff4500, #ffb703);
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.2rem;
+            box-shadow: 
+                0 0 25px rgba(255, 183, 3, 0.8),
+                0 8px 20px rgba(255, 69, 0, 0.4);
+            border: 3px solid #ffffff;
+            animation: floatIdol 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes floatIdol {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-8px); }
+        }
+
+        .divine-title {
+            font-family: 'Khand', sans-serif;
+            font-size: 2.3rem;
+            font-weight: 700;
+            color: #880e4f;
+            line-height: 1.1;
+            margin-bottom: 0.3rem;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .divine-subtitle {
+            font-size: 0.95rem;
+            color: #d84315;
+            font-weight: 600;
+            margin-bottom: 1.8rem;
+        }
+
+        .bell-sound-btn {
+            background: rgba(255, 183, 3, 0.15);
+            border: 1px solid #ffb703;
+            color: #b71c1c;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 1.5rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .bell-sound-btn:hover {
+            background: #ffb703;
+            color: #000;
+        }
+
+        .btn-enter-darshan {
+            width: 100%;
+            padding: 1.1rem;
+            background: linear-gradient(135deg, #d84315, #b71c1c);
+            color: #ffffff;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            font-family: 'Khand', sans-serif;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(216, 67, 21, 0.4);
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-enter-darshan:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(216, 67, 21, 0.5);
+            background: linear-gradient(135deg, #ff4500, #d84315);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="divine-background">
+        
+        <!-- Divine Aura Rays -->
+        <div class="divine-aura"></div>
+
+        <!-- Falling Flowers Canvas -->
+        <canvas id="flowerCanvas"></canvas>
+
+        <!-- Side Diyas -->
+        <div class="diya-container">
+            <div class="diya">🪔</div>
+            <div class="diya">🪔</div>
+        </div>
+
+        <!-- Divine Window Modal -->
+        <div class="divine-window">
+            
+            <div class="ganpati-idol-header">
+                🐘
+            </div>
+
+            <div style="font-size: 0.9rem; color: #ffb703; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px;">
+                🚩 ॐ गं गणपतये नमः 🚩
+            </div>
+
+            <h1 class="divine-title">
+                {{ settings.mandal_name }}
+            </h1>
+            
+            <p class="divine-subtitle">
+                {{ settings.tagline }}
+            </p>
+
+            <!-- Divine Mandal Subtitle -->
+
+            {% if error %}
+                <div style="background: #fee2e2; border: 1px solid #f87171; color: #991b1b; padding: 10px; border-radius: 12px; margin-bottom: 1.2rem; font-size: 0.9rem;">
+                    ⚠️ {{ error }}
+                </div>
+            {% endif %}
+
+            <form action="/login" method="POST" id="loginForm">
+                <div class="input-group" style="text-align: left;">
+                    <label for="mobile" class="input-label" style="color: #4a0000; font-weight: 700; font-size: 0.95rem;">
+                        📱 दर्शन व वर्गणीसाठी मोबाईल नंबर टाका:
+                    </label>
+                    <input type="tel" id="mobile" name="mobile" class="nova-input" placeholder="उदा. 9876543210" required pattern="[0-9]{10}" style="font-size: 1.25rem; text-align: center; letter-spacing: 3px; font-weight: 700; border-color: #ffb703; background: #fffcf7;">
+                </div>
+
+                <button type="submit" class="btn-enter-darshan">
+                    🚩 पोर्टलमद्धे प्रवेश करा ➔
+                </button>
+            </form>
+
+            <!-- Clean Production Login Modal without Developer Test Hints -->
+
+        </div>
+
+    </div>
+
+    <!-- Web Audio Synthesizer for Authentic Temple Bell Ring -->
+    <script>
+        // Temple Bell Sound Synthesizer using Web Audio API
+        function ringBellSound() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+
+                const now = ctx.currentTime;
+                
+                // Primary Bell Harmonic Frequencies
+                const freqs = [587.33, 880, 1174.66, 1760];
+                
+                freqs.forEach((freq, index) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now);
+
+                    // Exponential Decay for Authentic Bell Resonance
+                    const vol = 0.3 / (index + 1);
+                    gain.gain.setValueAtTime(vol, now);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.5);
+
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    osc.start(now);
+                    osc.stop(now + 2.5);
+                });
+            } catch(e) {
+                console.log("Audio Context initialized on user interaction");
+            }
+        }
+
+        // Falling Flower Petals Canvas Effect
+        const canvas = document.getElementById('flowerCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const petals = [];
+        const petalColors = ['#ff4500', '#ffb703', '#d84315', '#ff7844', '#ffffff'];
+
+        for (let i = 0; i < 40; i++) {
+            petals.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 8 + 4,
+                speedY: Math.random() * 1.5 + 0.8,
+                speedX: Math.random() * 1 - 0.5,
+                color: petalColors[Math.floor(Math.random() * petalColors.length)],
+                angle: Math.random() * 360
+            });
+        }
+
+        function drawPetals() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            petals.forEach(p => {
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate((p.angle * Math.PI) / 180);
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, p.size, p.size / 2, 0, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.restore();
+
+                p.y += p.speedY;
+                p.x += p.speedX;
+                p.angle += 1;
+
+                if (p.y > canvas.height) {
+                    p.y = -10;
+                    p.x = Math.random() * canvas.width;
+                }
+            });
+            requestAnimationFrame(drawPetals);
+        }
+        drawPetals();
+    </script>
+</body>
+</html>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ settings.mandal_name }} - श्री गणेश उत्सव</title>
+    <link href="https://fonts.googleapis.com/css2?family=Khand:wght@600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <!-- Festive Mandal Header -->
+    <header class="mandal-top-header">
+        <h1>🚩 {{ settings.mandal_name }} 🚩</h1>
+        <p class="subtitle">{{ settings.tagline }}</p>
+        <div class="header-links">
+            {% if session.role == 'admin' %}
+                <a href="/admin" class="link-btn" style="background: #ffb703; color: #000;">🔐 Admin Portal</a>
+            {% endif %}
+            <a href="/logout" class="link-btn">🚪 बाहेर पडा (Logout)</a>
+        </div>
+    </header>
+
+    <!-- TALL EXPANDED PHOTO & VIDEO SHOWCASE SLIDER -->
+    <div class="photo-container">
+        
+        <div style="text-align: center; margin-bottom: 0.4rem;">
+            <span style="background: rgba(255, 183, 3, 0.15); border: 1px solid #ffb703; color: #ffb703; padding: 4px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">
+                ✨ मागील वर्षाच्या गणेशोत्सवाचे फोटो व व्हिडिओ
+            </span>
+        </div>
+
+        {% if gallery %}
+        <div class="slider-box" id="customSlider">
+            {% for item in gallery %}
+            <div class="slide {% if loop.first %}active{% endif %}">
+                {% if item.type == 'video' %}
+                    {% if item.image_url.startswith('/static/') or item.image_url.endswith('.mp4') or item.image_url.endswith('.webm') or item.image_url.endswith('.mov') %}
+                        <!-- Local Video File Player (.mp4 / .mov) -->
+                        <video src="{{ item.image_url }}" controls autoplay loop muted class="slide-img-main" style="position:relative; z-index:3; width:100%; height:100%; object-fit:contain;"></video>
+                    {% else %}
+                        <!-- YouTube / External Video Link -->
+                        <iframe src="{{ item.image_url }}" style="width:100%; height:100%; border:none; position:relative; z-index:3;" allowfullscreen></iframe>
+                    {% endif %}
+                {% else %}
+                    <!-- Perfect Custom Size Auto-Fit Image Container -->
+                    <div class="slide-bg-blur" style="background-image: url('{{ item.image_url }}');"></div>
+                    <img src="{{ item.image_url }}" alt="{{ item.title }}" class="slide-img-main">
+                {% endif %}
+                <div class="slide-caption">
+                    <h3>🚩 {{ item.title }}</h3>
+                    <p style="font-size: 0.8rem; color: #ffe082;">उत्सव वर्ष: {{ item.year }}</p>
+                </div>
+            </div>
+            {% endfor %}
+
+            <button class="slider-arrow prev" onclick="moveSlide(-1)">❮</button>
+            <button class="slider-arrow next" onclick="moveSlide(1)">❯</button>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- 2 COMPACT SIDE-BY-SIDE ACTION BUTTONS -->
+    <div class="action-buttons-container">
+        
+        <!-- BUTTON 1: VARGANI SUBMISSION -->
+        <div class="big-village-btn" onclick="openVarganiModal()">
+            <div class="big-village-btn-icon">🚩</div>
+            <div class="big-village-btn-title">वर्गणी जमा करा</div>
+            <div class="big-village-btn-sub">पावती मिळवा</div>
+        </div>
+
+        <!-- BUTTON 2: MANDAL CONTACT NUMBERS -->
+        <div class="big-village-btn gold-theme" onclick="openContactModal()">
+            <div class="big-village-btn-icon">📞</div>
+            <div class="big-village-btn-title">मंडळ संपर्क</div>
+            <div class="big-village-btn-sub">अध्यक्ष / प्रमुख</div>
+        </div>
+
+    </div>
+
+    <!-- MODAL 1: VARGANI SUBMISSION FORM MODAL -->
+    <div class="modal-backdrop" id="varganiModal">
+        <div class="modal-window">
+            <button class="modal-close-btn" onclick="closeVarganiModal()">✕</button>
+
+            <div style="text-align: center; margin-bottom: 0.8rem;">
+                <span style="font-size: 2rem;">🚩</span>
+                <h2 style="font-family: 'Khand', sans-serif; font-size: 1.8rem; color: #880e4f;">वर्गणी नोंदणी फॉर्म</h2>
+                <p style="font-size: 0.82rem; color: #d84315; font-weight: 600;">वर्गणी जमा करून ऑनलाईन पावती मिळवा</p>
+            </div>
+
+            <form id="varganiForm" enctype="multipart/form-data">
+                <div class="input-group" style="text-align: left;">
+                    <label for="name" class="input-label">वर्गणीदाराचे नाव *</label>
+                    <input type="text" id="name" name="name" class="nova-input" placeholder="उदा. श्री. राहुल शिंदे" required>
+                </div>
+
+                <div class="input-group" style="text-align: left;">
+                    <label for="mobile" class="input-label">मोबाईल नंबर (WhatsApp No) *</label>
+                    <input type="tel" id="mobile" name="mobile" class="nova-input" value="{{ session.user }}" required pattern="[0-9]{10}">
+                </div>
+
+                <div class="input-group" style="text-align: left;">
+                    <label for="amount" class="input-label">वर्गणी रक्कम (₹) *</label>
+                    <input type="number" id="amount" name="amount" class="nova-input" placeholder="उदा. 501" required min="11">
+                </div>
+
+                <div class="input-group" style="text-align: left;">
+                    <label for="payment_mode" class="input-label">पेमेंट प्रकार (Payment Mode) *</label>
+                    <select id="payment_mode" name="payment_mode" class="nova-input" onchange="toggleQrVisibility()">
+                        <option value="Cash (रोख जमा)">Cash (रोख जमा)</option>
+                        <option value="Online (GPay / PhonePe / Paytm / QR)">Online (GPay / PhonePe / QR Code)</option>
+                    </select>
+                </div>
+
+                <!-- Dynamic QR Code Container (Shows ONLY when Online is selected) -->
+                <div id="qrContainer" style="text-align: center; background: #fff8e1; border: 1.5px dashed #ffb703; padding: 10px; border-radius: 12px; margin-bottom: 0.8rem;">
+                    <div style="font-weight: 700; font-size: 0.85rem; color: #b71c1c; margin-bottom: 4px;">📲 स्कॅन करून वर्गणी ट्रान्सफर करा (QR Code)</div>
+                    <img src="{{ settings.qr_code_url }}" alt="QR Code" style="width: 140px; height: 140px; object-fit: contain; border-radius: 8px; border: 1px solid #ffe082;">
+                    <div style="font-weight: 700; font-size: 0.9rem; color: #d84315; margin-top: 4px;">UPI ID: {{ settings.upi_id }}</div>
+                    {% if settings.receiver_name %}
+                        <div style="font-size: 0.78rem; color: #475569;">नाव: {{ settings.receiver_name }}</div>
+                    {% endif %}
+                </div>
+
+                <div id="formMsg" style="display: none; padding: 8px; border-radius: 8px; margin-bottom: 0.8rem; font-size: 0.85rem; text-align: center;"></div>
+
+                <button type="submit" id="submitBtn" class="btn-nova-submit">🚩 वर्गणी नोंदणी करा ➔</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: MANDAL CONTACT NUMBERS MODAL -->
+    <div class="modal-backdrop" id="contactModal">
+        <div class="modal-window">
+            <button class="modal-close-btn" onclick="closeContactModal()">✕</button>
+
+            <div style="text-align: center; margin-bottom: 1rem;">
+                <span style="font-size: 2rem;">📞</span>
+                <h2 style="font-family: 'Khand', sans-serif; font-size: 1.8rem; color: #880e4f;">गणेशोत्सव मंडळ संपर्क नंबर</h2>
+                <p style="font-size: 0.8rem; color: #666;">वर्गणी व चौकशीसाठी थेट संपर्क साधा</p>
+            </div>
+
+            <div>
+                <!-- Contact 1: Admin / President -->
+                {% if settings.phone_number %}
+                <div style="background: #fff8e1; border: 1px solid #ffe082; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong style="color: #b71c1c; font-size: 0.95rem;">अध्यक्ष / अ‍ॅडमिन (Admin)</strong>
+                        <div style="font-size: 0.85rem; color: #333;">📱 {{ settings.phone_number }}</div>
+                    </div>
+                    <a href="tel:{{ settings.phone_number }}" style="background: #2e7d32; color: #fff; padding: 5px 12px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 0.8rem;">📞 कॉल करा</a>
+                </div>
+                {% endif %}
+
+                <!-- Contact 2 -->
+                {% if settings.contact_phone2 %}
+                <div style="background: #fff8e1; border: 1px solid #ffe082; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong style="color: #b71c1c; font-size: 0.95rem;">{{ settings.contact_name2 or 'वर्गणी व पावती प्रमुख' }}</strong>
+                        <div style="font-size: 0.85rem; color: #333;">📱 {{ settings.contact_phone2 }}</div>
+                    </div>
+                    <a href="tel:{{ settings.contact_phone2 }}" style="background: #2e7d32; color: #fff; padding: 5px 12px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 0.8rem;">📞 कॉल करा</a>
+                </div>
+                {% endif %}
+
+                <!-- Contact 3 -->
+                {% if settings.contact_phone3 %}
+                <div style="background: #fff8e1; border: 1px solid #ffe082; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong style="color: #b71c1c; font-size: 0.95rem;">{{ settings.contact_name3 or 'खजिनदार (Treasurer)' }}</strong>
+                        <div style="font-size: 0.85rem; color: #333;">📱 {{ settings.contact_phone3 }}</div>
+                    </div>
+                    <a href="tel:{{ settings.contact_phone3 }}" style="background: #2e7d32; color: #fff; padding: 5px 12px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 0.8rem;">📞 कॉल करा</a>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Toggle QR Code Visibility (Shows ONLY when Online mode is selected)
+        function toggleQrVisibility() {
+            const modeSelect = document.getElementById('payment_mode');
+            const qrBox = document.getElementById('qrContainer');
+            if (modeSelect && qrBox) {
+                qrBox.style.display = modeSelect.value.includes('Online') ? 'block' : 'none';
+            }
+        }
+
+        // Modal Controls
+        function openVarganiModal() { 
+            document.getElementById('varganiModal').classList.add('active'); 
+            toggleQrVisibility();
+        }
+        function closeVarganiModal() { document.getElementById('varganiModal').classList.remove('active'); }
+        
+        function openContactModal() { document.getElementById('contactModal').classList.add('active'); }
+        function closeContactModal() { document.getElementById('contactModal').classList.remove('active'); }
+
+        // Slider Controls
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        
+        function showSlide(n) {
+            if (slides.length === 0) return;
+            slides.forEach(s => s.classList.remove('active'));
+            currentSlide = (n + slides.length) % slides.length;
+            slides[currentSlide].classList.add('active');
+        }
+
+        function moveSlide(step) { showSlide(currentSlide + step); }
+
+        setInterval(() => { moveSlide(1); }, 4000);
+    </script>
+</body>
+</html>

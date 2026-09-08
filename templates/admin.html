@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal - {{ settings.mandal_name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Khand:wght@600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body style="background-color: #f8fafc; color: #1e293b;">
+
+    <!-- Admin Mobile Header -->
+    <header class="mandal-top-header" style="background: linear-gradient(135deg, #1e293b, #0f172a); border-bottom-color: #ffb703;">
+        <h1>🔐 Admin Dashboard</h1>
+        <p class="subtitle" style="color: #cbd5e1;">🚩 {{ settings.mandal_name }} ({{ settings.phone_number }})</p>
+        <div class="header-links">
+            <a href="/" class="link-btn" style="background: #ffb703; color: #000;">🌐 मुख्य वेबसाईट</a>
+            <a href="/logout" class="link-btn" style="background: rgba(239,68,68,0.2); color: #ef4444; border-color: #ef4444;">🚪 Logout</a>
+        </div>
+    </header>
+
+    <main style="max-width: 1000px; margin: 0.8rem auto; padding: 0 0.8rem;">
+
+        <!-- Analytics Grid (2x2 Grid) -->
+        <div class="admin-stat-grid">
+            <div class="admin-stat-card">
+                <div class="admin-stat-title">एकूण जमा (Verified)</div>
+                <div class="admin-stat-val" style="color: #16a34a;">₹ {{ stats.total_collected }}</div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-title">प्रलंबित (Pending)</div>
+                <div class="admin-stat-val" style="color: #d97706;">₹ {{ stats.pending_amount }}</div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-title">Cash मागण्या</div>
+                <div class="admin-stat-val" style="color: #dc2626;">{{ stats.cash_pending_count }}</div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-title">Verified पावत्या</div>
+                <div class="admin-stat-val" style="color: #2563eb;">{{ stats.verified_count }}</div>
+            </div>
+        </div>
+
+        <!-- 2-Line Admin Grid Menu (Click button to view section) -->
+        <div class="admin-menu-grid">
+            <button class="tab-btn active" data-tab="listTab">
+                📜 १. वर्गणी पावत्या लिस्ट
+            </button>
+            <button class="tab-btn" data-tab="sliderTab">
+                🎬 २. फोटो व व्हिडिओ अपलोड
+            </button>
+            <button class="tab-btn" data-tab="cashTab">
+                ➕ ३. रोख वर्गणी नोंदवा
+            </button>
+            <button class="tab-btn" data-tab="settingsTab">
+                ⚙️ ४. QR Code व सेटिंग्ज
+            </button>
+        </div>
+
+        <!-- TAB 1: LIST & VERIFICATION WITH WHATSAPP RECEIPT -->
+        <div id="listTab" class="tab-content">
+            <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem;">
+                    <h2 style="font-family: 'Khand', sans-serif; font-size: 1.4rem; color: #1e293b;">📋 वर्गणी पावत्या व पडताळणी</h2>
+                    
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap; width: 100%;">
+                        <input type="text" id="searchVargani" class="nova-input" placeholder="🔍 शोध (नाव, नंबर, पावती...)" style="flex: 1; padding: 6px 10px; font-size: 0.85rem;">
+                        
+                        <select id="filterStatus" class="nova-input" style="width: 120px; padding: 6px 8px; font-size: 0.85rem;">
+                            <option value="All">सर्व</option>
+                            <option value="Pending Cash">Cash मागणी</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Verified">Verified</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="admin-table-wrapper">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; min-width: 620px;">
+                        <thead>
+                            <tr style="background: #f1f5f9; color: #475569;">
+                                <th style="padding: 10px 8px;">पावती नं.</th>
+                                <th style="padding: 10px 8px;">वर्गणीदार</th>
+                                <th style="padding: 10px 8px;">रक्कम</th>
+                                <th style="padding: 10px 8px;">प्रकार</th>
+                                <th style="padding: 10px 8px;">स्टेटस</th>
+                                <th style="padding: 10px 8px;">WhatsApp Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="varganiTableBody">
+                            {% for r in records %}
+                            <tr style="border-bottom: 1px solid #f1f5f9;">
+                                <td style="padding: 10px 8px;"><strong>{{ r.receipt_no }}</strong></td>
+                                <td style="padding: 10px 8px;">{{ r.name }}<br><small style="color: #64748b;">{{ r.mobile }}</small></td>
+                                <td style="padding: 10px 8px;"><strong style="color: #d84315;">₹{{ r.amount }}</strong></td>
+                                <td style="padding: 10px 8px;">{{ r.payment_mode }}</td>
+                                <td style="padding: 10px 8px;">
+                                    {% if r.status == 'Verified' %}
+                                        <span class="badge-status badge-verified">✅ Verified</span>
+                                    {% elif r.status == 'Pending Cash' %}
+                                        <span class="badge-status" style="background: #fee2e2; color: #991b1b; border: 1px solid #f87171;">🔔 Cash मागणी</span>
+                                    {% else %}
+                                        <span class="badge-status badge-pending">⏳ Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td style="padding: 10px 8px;">
+                                    <a href="/receipt/{{ r.receipt_no }}" class="btn-action-sm" target="_blank">📄 पावती</a>
+                                    
+                                    {% if r.status != 'Verified' %}
+                                        <button onclick="verifyAndSendWA('{{ r._id }}')" class="btn-wa-action" title="Confirm करा आणि WhatsApp वर पावती पाठवा">
+                                            💬 Confirm & WhatsApp
+                                        </button>
+                                    {% else %}
+                                        <a href="https://api.whatsapp.com/send?phone=91{{ r.mobile }}&text={{ ('🚩 ' + settings.mandal_name + ' 🚩\n\nनमस्कार ' + r.name + ',\nआपली ₹' + (r.amount|string) + ' वर्गणी जमा झाली असून मंडळाकडून पडताळणी करण्यात आली आहे!\n\nपावती क्रमांक: ' + r.receipt_no + '\nडिजिटल पावती / PDF लिंक:\nhttp://localhost:5000/receipt/' + r.receipt_no + '\n\nमंडळाकडून आपले मनःपूर्वक आभार!\nगणपती बाप्पा मोरया! 🚩')|urlencode }}" target="_blank" class="btn-wa-action" style="background: #059669;">
+                                            💬 WhatsApp
+                                        </a>
+                                    {% endif %}
+
+                                    <button onclick="deleteVargani('{{ r._id }}')" class="btn-action-sm" style="color: #dc2626 !important;">🗑️</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: LOCAL PHOTO & VIDEO FILE UPLOAD -->
+        <div id="sliderTab" class="tab-content" style="display: none;">
+            <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.2rem; max-width: 650px; margin: 0 auto;">
+                <h2 style="font-family: 'Khand', sans-serif; font-size: 1.4rem; color: #1e293b; margin-bottom: 1rem;">🎬 फोल्डरमधील फोटो व व्हिडिओ अपलोड करा (Upload File)</h2>
+
+                <form id="sliderUploadForm" enctype="multipart/form-data">
+                    <div class="input-group">
+                        <label for="slide_title" class="input-label">शीर्षक / कॅप्शन *</label>
+                        <input type="text" id="slide_title" name="title" class="nova-input" placeholder="उदा. विसर्जन मिरवणूक व्हिडिओ २०२५" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="slide_year" class="input-label">उत्सव वर्ष</label>
+                        <input type="text" id="slide_year" name="year" class="nova-input" value="2025">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="slide_type" class="input-label">मीडिया प्रकार (Select Upload Option)</label>
+                        <select id="slide_type" name="type" class="nova-input">
+                            <option value="photo">🖼️ फोल्डरमधील फोटो फाईल (.jpg, .png)</option>
+                            <option value="video_file">🎥 फोल्डरमधील व्हिडिओ फाईल (.mp4, .mov, .webm)</option>
+                            <option value="video">🔗 यूट्यूब / ऑनलाईन व्हिडिओ लिंक (YouTube Link)</option>
+                        </select>
+                    </div>
+
+                    <!-- Photo File Input -->
+                    <div class="input-group" id="photoGroup">
+                        <label for="slide_photo" class="input-label">कम्प्युटर/मोबाईल फोल्डरमधील फोटो फाईल निवडा</label>
+                        <input type="file" id="slide_photo" name="photo" class="nova-input" accept="image/*">
+                    </div>
+
+                    <!-- Video File Input -->
+                    <div class="input-group" id="videoFileGroup" style="display: none;">
+                        <label for="slide_video_file" class="input-label">कम्प्युटर/मोबाईल फोल्डरमधील व्हिडिओ फाईल निवडा (.mp4)</label>
+                        <input type="file" id="slide_video_file" name="video_file" class="nova-input" accept="video/mp4,video/webm,video/mov,video/*">
+                    </div>
+
+                    <!-- YouTube Link Input -->
+                    <div class="input-group" id="videoGroup" style="display: none;">
+                        <label for="slide_video_url" class="input-label">यूट्यूब व्हिडिओ Link</label>
+                        <input type="text" id="slide_video_url" name="video_url" class="nova-input" placeholder="https://www.youtube.com/embed/...">
+                    </div>
+
+                    <button type="submit" class="btn-nova-submit" style="background: #059669;">➕ स्लाईडर मध्ये जोडा (Upload Now)</button>
+                </form>
+
+                <!-- Current Slider Media List -->
+                <div style="margin-top: 1.5rem;">
+                    <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.8rem;">सध्याचे स्लाईडर फोटो व व्हिडिओ:</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;">
+                        {% for item in gallery %}
+                        <div style="border: 1px solid #cbd5e1; border-radius: 10px; overflow: hidden; background: #f8fafc;">
+                            {% if item.type == 'video' %}
+                                <div style="background: #0f172a; color: #ffb703; text-align: center; padding: 1.5rem 0; font-size: 0.8rem; font-weight: 600;">🎬 Video Slide</div>
+                            {% else %}
+                                <img src="{{ item.image_url }}" alt="{{ item.title }}" style="width: 100%; height: 90px; object-fit: cover;">
+                            {% endif %}
+                            <div style="padding: 6px; font-size: 0.78rem;">
+                                <strong>{{ item.title }}</strong>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                                    <span style="color: #64748b; font-size: 0.72rem;">{{ item.year }}</span>
+                                    <button onclick="deleteSliderItem('{{ item._id }}')" style="color: #dc2626; border: none; background: none; cursor: pointer; font-size: 0.75rem;">🗑️ हटवा</button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- TAB 3: MANUAL CASH ENTRY -->
+        <div id="cashTab" class="tab-content" style="display: none;">
+            <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.2rem; max-width: 500px; margin: 0 auto;">
+                <h2 style="font-family: 'Khand', sans-serif; font-size: 1.4rem; color: #1e293b; margin-bottom: 1rem;">💵 रोख वर्गणी नोंदणी (Add Cash)</h2>
+
+                <form id="manualVarganiForm">
+                    <div class="input-group">
+                        <label for="manual_name" class="input-label">वर्गणीदाराचे नाव *</label>
+                        <input type="text" id="manual_name" name="name" class="nova-input" placeholder="उदा. श्री. विकास कदम" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="manual_mobile" class="input-label">मोबाईल नंबर (WhatsApp)</label>
+                        <input type="tel" id="manual_mobile" name="mobile" class="nova-input" placeholder="उदा. 9822000000">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="manual_address" class="input-label">पत्ता / गल्ली</label>
+                        <input type="text" id="manual_address" name="address" class="nova-input" placeholder="उदा. गणेश नगर, लेन २">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="manual_amount" class="input-label">वर्गणी रक्कम (₹) *</label>
+                        <input type="number" id="manual_amount" name="amount" class="nova-input" placeholder="उदा. 501" required min="1">
+                    </div>
+
+                    <button type="submit" class="btn-nova-submit" style="background: #059669;">➕ रोख वर्गणी सेव्ह करा</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- TAB 4: QR CODE & MANDAL SETTINGS -->
+        <div id="settingsTab" class="tab-content" style="display: none;">
+            <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.2rem; max-width: 650px; margin: 0 auto;">
+                <h2 style="font-family: 'Khand', sans-serif; font-size: 1.4rem; color: #1e293b; margin-bottom: 0.3rem;">⚙️ मंडळ, QR Code व संपर्क सेटिंग्ज</h2>
+                <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 1.2rem;">वेबसाईटवरील मंडळाचे नाव, संपर्क नंबर, QR Code, व UPI ID येथून कधीही बदला.</p>
+
+                <form id="settingsForm" enctype="multipart/form-data">
+                    
+                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
+                        <h3 style="font-size: 0.95rem; color: #b71c1c; margin-bottom: 0.8rem; border-bottom: 1px dashed #cbd5e1; padding-bottom: 4px;">🚩 १. मंडळाची मुख्य माहिती (Header Info)</h3>
+                        
+                        <div class="input-group">
+                            <label for="mandal_name" class="input-label">मंडळाचे नाव *</label>
+                            <input type="text" id="mandal_name" name="mandal_name" class="nova-input" value="{{ settings.mandal_name }}" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="tagline" class="input-label">टॅगलाईन / ब्रीदवाक्य</label>
+                            <input type="text" id="tagline" name="tagline" class="nova-input" value="{{ settings.tagline }}">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="address" class="input-label">मंडळाचा मुख्य पत्ता (Address)</label>
+                            <input type="text" id="address" name="address" class="nova-input" value="{{ settings.address }}">
+                        </div>
+                    </div>
+
+                    <div style="background: #fff8e1; border: 1px solid #ffe082; padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
+                        <h3 style="font-family: 'Khand', sans-serif; font-size: 1.1rem; color: #d84315; margin-bottom: 0.8rem; border-bottom: 1px dashed #ffe082; padding-bottom: 4px;">📲 २. Payment QR Code व UPI विवरण</h3>
+                        
+                        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap;">
+                            {% if settings.qr_code_url %}
+                            <div style="text-align: center;">
+                                <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 2px;">सध्याचा active QR Code:</div>
+                                <img src="{{ settings.qr_code_url }}" alt="Current QR" style="width: 100px; height: 100px; object-fit: contain; border: 2px solid #ffb703; border-radius: 10px; background: #fff;">
+                            </div>
+                            {% endif %}
+
+                            <div style="flex: 1; min-width: 200px;">
+                                <div class="input-group">
+                                    <label for="qr_code" class="input-label">नवीन QR Code फोटो अपलोड करा (Select Image File)</label>
+                                    <input type="file" id="qr_code" name="qr_code" class="nova-input" accept="image/*">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="upi_id" class="input-label">UPI ID *</label>
+                            <input type="text" id="upi_id" name="upi_id" class="nova-input" value="{{ settings.upi_id }}" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="receiver_name" class="input-label">प्राप्तकर्त्याचे नाव (Account Holder Name)</label>
+                            <input type="text" id="receiver_name" name="receiver_name" class="nova-input" value="{{ settings.receiver_name }}">
+                        </div>
+                    </div>
+
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
+                        <h3 style="font-size: 0.95rem; color: #166534; margin-bottom: 0.8rem; border-bottom: 1px dashed #bbf7d0; padding-bottom: 4px;">📞 ३. मंडळ संपर्क मोबाईल नंबर लिस्ट</h3>
+                        
+                        <div class="input-group">
+                            <label for="phone_number" class="input-label">अध्यक्ष / मुख्य अ‍ॅडमिन मोबाईल नंबर *</label>
+                            <input type="text" id="phone_number" name="phone_number" class="nova-input" value="{{ settings.phone_number }}" required>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <div class="input-group">
+                                <label for="contact_name2" class="input-label">संपर्क २ (पद / नाव)</label>
+                                <input type="text" id="contact_name2" name="contact_name2" class="nova-input" value="{{ settings.contact_name2 or 'वर्गणी व पावती प्रमुख' }}">
+                            </div>
+                            <div class="input-group">
+                                <label for="contact_phone2" class="input-label">संपर्क २ मोबाईल</label>
+                                <input type="text" id="contact_phone2" name="contact_phone2" class="nova-input" value="{{ settings.contact_phone2 or '9876543210' }}">
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <div class="input-group">
+                                <label for="contact_name3" class="input-label">संपर्क ३ (पद / नाव)</label>
+                                <input type="text" id="contact_name3" name="contact_name3" class="nova-input" value="{{ settings.contact_name3 or 'खजिनदार (Treasurer)' }}">
+                            </div>
+                            <div class="input-group">
+                                <label for="contact_phone3" class="input-label">संपर्क ३ मोबाईल</label>
+                                <input type="text" id="contact_phone3" name="contact_phone3" class="nova-input" value="{{ settings.contact_phone3 or '9822114455' }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-nova-submit" style="background: linear-gradient(135deg, #059669, #047857);">💾 सर्व सेटिंग्ज व QR Code अपडेट करा</button>
+                </form>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+    <script>
+        // Media Type Toggle in Admin Slider Form
+        const slideTypeSelect = document.getElementById('slide_type');
+        if (slideTypeSelect) {
+            slideTypeSelect.addEventListener('change', () => {
+                const val = slideTypeSelect.value;
+                document.getElementById('photoGroup').style.display = (val === 'photo') ? 'block' : 'none';
+                document.getElementById('videoFileGroup').style.display = (val === 'video_file') ? 'block' : 'none';
+                document.getElementById('videoGroup').style.display = (val === 'video') ? 'block' : 'none';
+            });
+        }
+
+        // Upload Slider Media Form Submit
+        const sliderForm = document.getElementById('sliderUploadForm');
+        if (sliderForm) {
+            sliderForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(sliderForm);
+                try {
+                    const res = await fetch('/api/gallery/upload', { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (data.success) {
+                        alert('✅ स्लाईडर फोटो/व्हिडिओ अपलोड झाला!');
+                        location.reload();
+                    } else {
+                        alert('❌ एरर: ' + data.message);
+                    }
+                } catch(err) {
+                    alert('❌ नेटवर्क एरर');
+                }
+            });
+        }
+
+        // Delete Slider Media
+        async function deleteSliderItem(id) {
+            if (!confirm('नक्की हा स्लाईडर फोटो/व्हिडिओ हटवायचा आहे का?')) return;
+            try {
+                const res = await fetch(`/api/gallery/delete/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ हटवला गेला.');
+                    location.reload();
+                } else {
+                    alert('❌ एरर: ' + data.message);
+                }
+            } catch(e) {
+                alert('❌ नेटवर्क एरर');
+            }
+        }
+    </script>
+</body>
+</html>

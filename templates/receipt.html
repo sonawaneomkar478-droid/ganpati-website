@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>वर्गणी पावती - {{ record.receipt_no }} - {{ settings.mandal_name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Khand:wght@500;600;700&family=Outfit:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .receipt-card {
+            max-width: 600px;
+            margin: 3rem auto;
+            background: #fff;
+            border-radius: var(--radius-xl);
+            border: 2px solid #ffb703;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 2.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .receipt-card::before {
+            content: '🚩 श्री गणेशाय नमः 🚩';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(90deg, #ff4500, #ffb703);
+            color: #fff;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 4px;
+        }
+        .receipt-head {
+            text-align: center;
+            border-bottom: 2px dashed var(--border-color);
+            padding-bottom: 1.2rem;
+            margin-bottom: 1.5rem;
+            margin-top: 0.5rem;
+        }
+        .receipt-head h2 {
+            font-family: 'Khand', sans-serif;
+            font-size: 2.2rem;
+            color: #9a031e;
+            line-height: 1.1;
+        }
+        .receipt-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 1rem;
+        }
+        .receipt-label { color: var(--text-muted); font-weight: 500; }
+        .receipt-val { font-weight: 700; color: var(--text-main); }
+        
+        .receipt-stamp {
+            margin: 2rem auto 1rem;
+            text-align: center;
+            border: 2px dashed #10b981;
+            color: #065f46;
+            background: #ecfdf5;
+            padding: 8px 24px;
+            border-radius: 30px;
+            display: inline-block;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        .btn-wa-share {
+            background: #25d366;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+        }
+        @media print {
+            .navbar, .btn-print-group { display: none !important; }
+            .receipt-card { border: 2px solid #000; box-shadow: none; margin: 0 auto; }
+            body { background: #fff; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="/" class="brand-logo">
+                <div class="brand-icon">📄</div>
+                <div>
+                    <div class="brand-title">अधिकृत डिजिटल पावती</div>
+                    <div class="brand-subtitle">{{ settings.mandal_name }}</div>
+                </div>
+            </a>
+            <div class="nav-actions">
+                <a href="/" class="btn-nav btn-nav-outline">🏠 मुख्य पान</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        
+        <div class="receipt-card">
+            
+            <div class="receipt-head">
+                <h2>{{ settings.mandal_name }}</h2>
+                <p style="font-size: 0.9rem; color: var(--text-muted);">{{ settings.address }} | संपर्क: {{ settings.phone_number }}</p>
+                <div style="margin-top: 0.8rem; font-size: 1.2rem; font-weight: 700; color: var(--primary);">
+                    🚩 गणेशोत्सव वर्गणी पावती 🚩
+                </div>
+            </div>
+
+            <div class="receipt-item">
+                <span class="receipt-label">पावती क्रमांक:</span>
+                <span class="receipt-val" style="color: #9a031e; font-size: 1.1rem;">{{ record.receipt_no }}</span>
+            </div>
+
+            <div class="receipt-item">
+                <span class="receipt-label">तारीख व वेळ:</span>
+                <span class="receipt-val">{{ record.created_at_str }}</span>
+            </div>
+
+            <div class="receipt-item">
+                <span class="receipt-label">वर्गणीदाराचे नाव:</span>
+                <span class="receipt-val">{{ record.name }}</span>
+            </div>
+
+            <div class="receipt-item">
+                <span class="receipt-label">मोबाईल नंबर:</span>
+                <span class="receipt-val">{{ record.mobile }}</span>
+            </div>
+
+            <div class="receipt-item">
+                <span class="receipt-label">पत्ता / परिसर:</span>
+                <span class="receipt-val">{{ record.address or 'नमुद नाही' }}</span>
+            </div>
+
+            <div class="receipt-item" style="background: #fff3ed; padding: 12px; border-radius: 12px; margin: 12px 0;">
+                <span class="receipt-label" style="font-size: 1.2rem; color: var(--primary-dark);">प्राप्त वर्गणी रक्कम:</span>
+                <span class="receipt-val" style="font-size: 1.6rem; color: var(--primary);">₹ {{ record.amount }} /-</span>
+            </div>
+
+            <div class="receipt-item">
+                <span class="receipt-label">पेमेंट प्रकार:</span>
+                <span class="receipt-val">{{ record.payment_mode }}</span>
+            </div>
+
+            {% if record.transaction_id %}
+            <div class="receipt-item">
+                <span class="receipt-label">Transaction ID / UTR:</span>
+                <span class="receipt-val" style="font-size: 0.9rem;">{{ record.transaction_id }}</span>
+            </div>
+            {% endif %}
+
+            <div class="receipt-item">
+                <span class="receipt-label">पावती स्टेटस:</span>
+                <span class="receipt-val">
+                    {% if record.status == 'Verified' %}
+                        <span style="color: #059669; font-weight: bold;">✅ Verified (स्वीकृत व पडताळलेली)</span>
+                    {% else %}
+                        <span style="color: #d97706; font-weight: bold;">⏳ Pending (पडताळणी प्रलंबित)</span>
+                    {% endif %}
+                </span>
+            </div>
+
+            <div style="text-align: center;">
+                <div class="receipt-stamp">
+                    ✓ श्री गणेशाय नमः | मनःपूर्वक आभार!
+                </div>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">गणपती बाप्पा मोरया! मंगलमूर्ती मोरया!</p>
+            </div>
+
+            <div style="display: flex; justify-content: center; gap: 12px; margin-top: 1.8rem; flex-wrap: wrap;" class="btn-print-group">
+                <button onclick="window.print()" class="btn-nav btn-nav-primary" style="padding: 10px 24px; font-size: 1rem; cursor: pointer;">
+                    🖨️ पावती प्रिंट करा / PDF
+                </button>
+                
+                <a href="https://api.whatsapp.com/send?text={{ ('माझी ' + settings.mandal_name + ' ची गणेशोत्सव वर्गणी पावती (%23' + record.receipt_no + ') : ₹' + (record.amount|string))|urlencode }}" target="_blank" class="btn-wa-share">
+                    💬 WhatsApp वर शेअर करा
+                </a>
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>

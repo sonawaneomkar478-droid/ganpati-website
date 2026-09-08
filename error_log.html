@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang=en>
+  <head>
+    <title>jinja2.exceptions.UndefinedError: &#39;settings&#39; is undefined
+ // Werkzeug Debugger</title>
+    <link rel="stylesheet" href="?__debugger__=yes&amp;cmd=resource&amp;f=style.css">
+    <link rel="shortcut icon"
+        href="?__debugger__=yes&amp;cmd=resource&amp;f=console.png">
+    <script src="?__debugger__=yes&amp;cmd=resource&amp;f=debugger.js"></script>
+    <script>
+      var CONSOLE_MODE = false,
+          EVALEX = true,
+          EVALEX_TRUSTED = false,
+          SECRET = "4yFLQ7dSn9KSkMWSKGsj";
+    </script>
+  </head>
+  <body style="background-color: #fff">
+    <div class="debugger">
+<h1>jinja2.exceptions.UndefinedError</h1>
+<div class="detail">
+  <p class="errormsg">jinja2.exceptions.UndefinedError: &#39;settings&#39; is undefined
+</p>
+</div>
+<h2 class="traceback">Traceback <em>(most recent call last)</em></h2>
+<div class="traceback">
+  <h3></h3>
+  <ul><li><div class="frame" id="frame-1561285842624">
+  <h4>File <cite class="filename">"E:\ganpati website\venv\Lib\site-packages\flask\app.py"</cite>,
+      line <em class="line">1536</em>,
+      in <code class="function">__call__</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">    </span>) -&gt; cabc.Iterable[bytes]:</pre>
+<pre class="line before"><span class="ws">        </span>&#34;&#34;&#34;The WSGI server calls the Flask application object as the</pre>
+<pre class="line before"><span class="ws">        </span>WSGI application. This calls :meth:`wsgi_app`, which can be</pre>
+<pre class="line before"><span class="ws">        </span>wrapped to apply middleware.</pre>
+<pre class="line before"><span class="ws">        </span>&#34;&#34;&#34;</pre>
+<pre class="line current"><span class="ws">        </span>return self.wsgi_app(environ, start_response)
+<span class="ws">        </span>       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1561285846944">
+  <h4>File <cite class="filename">"E:\ganpati website\venv\Lib\site-packages\flask\app.py"</cite>,
+      line <em class="line">1514</em>,
+      in <code class="function">wsgi_app</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">            </span>try:</pre>
+<pre class="line before"><span class="ws">                </span>ctx.push()</pre>
+<pre class="line before"><span class="ws">                </span>response = self.full_dispatch_request()</pre>
+<pre class="line before"><span class="ws">            </span>except Exception as e:</pre>
+<pre class="line before"><span class="ws">                </span>error = e</pre>
+<pre class="line current"><span class="ws">                </span>response = self.handle_exception(e)
+<span class="ws">                </span>           ^^^^^^^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws">            </span>except:</pre>
+<pre class="line after"><span class="ws">                </span>error = sys.exc_info()[1]</pre>
+<pre class="line after"><span class="ws">                </span>raise</pre>
+<pre class="line after"><span class="ws">            </span>return response(environ, start_response)</pre>
+<pre class="line after"><span class="ws">        </span>finally:</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1561285842944">
+  <h4>File <cite class="filename">"E:\ganpati website\venv\Lib\site-packages\flask_cors\extension.py"</cite>,
+      line <em class="line">206</em>,
+      in <code class="function">wrapped_function</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">        </span>if options.intercept_exceptions and hasattr(app, &#34;handle_exception&#34;):</pre>
+<pre class="line before"><span class="ws">            </span>app_any: Any = app</pre>
+<pre class="line before"><span class="ws"></span> </pre>
+<pre class="line before"><span class="ws">            </span>def _after_request_decorator(f: Callable[..., Any]) -&gt; Callable[..., Response]:</pre>
+<pre class="line before"><span class="ws">                </span>def wrapped_function(*args: Any, **kwargs: Any) -&gt; Response:</pre>
+<pre class="line current"><span class="ws">                    </span>return cors_after_request(app_any.make_response(f(*args, **kwargs)))
+<span class="ws">                    </span>                                                ^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">                </span>return wrapped_function</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">            </span>app_any.handle_exception = _after_request_decorator(app_any.handle_exception)</pre>
+<pre class="line after"><span class="ws">            </span>app_any.handle_user_exception = _after_request_decorator(app_any.handle_user_exception)</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1561285840864">
+  <h4>File <cite class="filename">"E:\ganpati website\venv\Lib\site-packages\flask\app.py"</cite>,
+      line <em class="line">1511</em>,
+      in <code class="function">wsgi_app</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">        </span>ctx = self.request_context(environ)</pre>
+<pre class="line before"><span class="ws">        </span>error: BaseException | None = None</pre>
+<pre class="line before"><span class="ws">        </span>try:</pre>
+<pre class="line before"><span class="ws">            </span>try:</pre>
+<pre class="line before"><span class="ws">                </span>ctx.push()</pre>
+<pre class="line current"><span class="ws">                </span>response = self.full_dispatch_request()
+<span class="ws">                </span>           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws">            </span>except Exception as e:</pre>
+<pre class="line after"><span class="ws">                </span>error = e</pre>
+<pre class="line after"><span class="ws">                </span>response = self.handle_exception(e)</pre>
+<pre class="line after"><span class="ws">            </span>except:</pre>
+<pre class="line after"><span class="ws">                </span>error = sys.exc_info()[1]</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1561285850944">
+  <h4>File <cite class="filename">"E:\ganpati website\venv\Lib\site-packages\flask\app.py"</cite>,
+      line <em class="line">919</em>,
+      in <code class="function">full_dispatch_request</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">            </span>request_started.send(self, _async_wrapper=self.ensure_sync)</pre>
+<pre class="line before"><span class="ws">            </span>rv = self.preprocess_request()</pre>
+<pre class="line before"><span class="ws">            </span>if rv is None:</pre>
+<pre class="line before"><span class="ws">                </span>rv = self.dispatch_request()</pre>
+<pre class="line before"><span class="ws">        </span>except Exception as e:</pre>
+<pre class="line current"><span class="ws">            </span>rv = self.handle_user_exception(e)
+<span class="ws">            </span>     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws">        </span>return self.finalize_request(rv)</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">    </span>def finalize_request(</pre>
+<pre class="line after"><span class="ws">        </span>self,</pre>
+<pre class="line after"><span class="ws">        </span>rv: ft.ResponseReturnValue | HTTPException,</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1561285846144">
+  <h4>File <cite class="filename">"E:\ganpati website\venv\Lib\site-packages\flask_cors\extension.py"</cite>,
+      line <em class="line">206</em>,
+      in <code class="function">wrapped_function</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">        </span>if options.intercept_exceptions and hasattr(app, &#34;handle_exception&#34;):</pre>
+<pre class="line before"><span class="ws">            </span>app_any: Any = app</pre>
+<pre class="line before"><span class="ws"></span> </pre>
+<pre class="line before"><span class="ws">            </span>def _after_request_decorator(f: Callable[..., Any]) -&gt; Callable[..., Response]:</pre>
+<pre class="line before"><span class="ws">                </span>def wrapped_function(*args: Any, **kwargs: Any) -&gt; Response:</pre>
+<pre class="line current"><span class="ws">                    </span>return cors_after_request(app_any.make_response(f(*args, **kwargs)))
+<span class="ws">                    </span>                                                ^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">                </span>return wrapped_function</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">            </span>app_any.handle_exception = _after_request_decorator(app_any.handle_exception)</pre>
+<pre class="line after"><span class="ws">            </span>app_any.handle_user_exception = _after_request_decorator(app_any.handle_user_exception)</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1561285853024">
+  <h4>File <cite class="filename">"E:\ganpati website\venv\Lib\site-packages\flask\app.py"</cite>,
+      line <em class="line">917</em>,
+      in <code class="function">full_dispatch_request</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws"></span> </pre>
+<pre class="line before"><span class="ws">        </span>try:</pre>
+<pre class="line before"><span class="ws">            </span>request_started.send(self, _async_wrapper=self.ensure_sync)</pre>
+<pre class="line before"><span class="ws">            </span>rv = self.preprocess_request()</pre>
+<pre class="line before"><span class="ws">            </span>if rv is None:</pre>
+<pre class="line current"><span class="ws">                </span>rv = self.dispatch_request()
+<span class="ws">                </span>     ^^^^^^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws">        </span>except Exception as e:</pre>
+<pre class="line after"><span class="ws">            </span>rv = self.handle_user_exception(e)</pre>
+<pre class="line after"><span class="ws">        </span>return self.finalize_request(rv)</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">    </span>def finalize_request(</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1561285841504">
+  <h4>File <cite class="filename">"E:\ganpati website\venv\Lib\site-packages\flask\app.py"</cite>,
+      line <em class="line">902</em>,
+      in <code class="function">dispatch_request</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">            </span>and req.method == &#34;OPTIONS&#34;</pre>
+<pre class="line before"><span class="ws">        </span>):</pre>
+<pre class="line before"><span class="ws">            </span>return self.make_default_options_response()</pre>
+<pre class="line before"><span class="ws">        </span># otherwise dispatch to the handler for that endpoint</pre>
+<pre class="line before"><span class="ws">        </span>view_args: dict[str, t.Any] = req.view_args  # type: ignore[assignment]</pre>
+<pre class="line current"><span class="ws">        </span>return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+<span class="ws">        </span>       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">    </span>def full_dispatch_request(self) -&gt; Response:</pre>
+<pre class="line after"><span class="ws">        </span>&#34;&#34;&#34;Dispatches the request and on top of that performs request</pre>
+<pre class="line after"><span class="ws">        </span>pre and postprocessing as well as HTTP exception catching and</pre>
+<pre class="line after"><span class="ws">        </span>error handling.</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1561285848384">
+  <h4>File <cite class="filename">"E:\ganpati website\app.py"</cite>,
+      line <em class="line">45</em>,
+      in <code class="function">login</code></h4>
+  <div class="source "><pre class="line before"><span class="ws">            </span>return redirect(url_for(&#39;admin&#39;))</pre>
+<pre class="line before"><span class="ws">        </span>else:</pre>
+<pre class="line before"><span class="ws">            </span>session[&#39;role&#39;] = &#39;user&#39;</pre>
+<pre class="line before"><span class="ws">            </span>return redirect(url_for(&#39;index&#39;))</pre>
+<pre class="line before"><span class="ws"></span> </pre>
+<pre class="line current"><span class="ws">    </span>return render_template(&#39;login.html&#39;)
+<span class="ws">    </span>       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws"></span>@app.route(&#39;/logout&#39;)</pre>
+<pre class="line after"><span class="ws"></span>def logout():</pre>
+<pre class="line after"><span class="ws">    </span>session.clear()</pre>
+<pre class="line after"><span class="ws">    </span>return redirect(url_for(&#39;login&#39;))</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1561285851264">
+  <h4>File <cite class="filename">"E:\ganpati website\venv\Lib\site-packages\flask\templating.py"</cite>,
+      line <em class="line">151</em>,
+      in <code class="function">render_template</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">        </span>a list is given, the first name to exist will be rendered.</pre>
+<pre class="line before"><span class="ws">    </span>:param context: The variables to make available in the template.</pre>
+<pre class="line before"><span class="ws">    </span>&#34;&#34;&#34;</pre>
+<pre class="line before"><span class="ws">    </span>app = current_app._get_current_object()  # type: ignore[attr-defined]</pre>
+<pre class="line before"><span class="ws">    </span>template = app.jinja_env.get_or_select_template(template_name_or_list)</pre>
+<pre class="line current"><span class="ws">    </span>return _render(app, template, context)
+<span class="ws">    </span>       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws"></span>def render_template_string(source: str, **context: t.Any) -&gt; str:</pre>
+<pre class="line after"><span class="ws">    </span>&#34;&#34;&#34;Render a template from the given source string with the given</pre>
+<pre class="line after"><span class="ws">    </span>context.</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1561285838944">
+  <h4>File <cite class="filename">"E:\ganpati website\venv\Lib\site-packages\flask\templating.py"</cite>,
+      line <em class="line">132</em>,
+      in <code class="function">_render</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws"></span>def _render(app: Flask, template: Template, context: dict[str, t.Any]) -&gt; str:</pre>
+<pre class="line before"><span class="ws">    </span>app.update_template_context(context)</pre>
+<pre class="line before"><span class="ws">    </span>before_render_template.send(</pre>
+<pre class="line before"><span class="ws">        </span>app, _async_wrapper=app.ensure_sync, template=template, context=context</pre>
+<pre class="line before"><span class="ws">    </span>)</pre>
+<pre class="line current"><span class="ws">    </span>rv = template.render(context)
+<span class="ws">    </span>     ^^^^^^^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws">    </span>template_rendered.send(</pre>
+<pre class="line after"><span class="ws">        </span>app, _async_wrapper=app.ensure_sync, template=template, context=context</pre>
+<pre class="line after"><span class="ws">    </span>)</pre>
+<pre class="line after"><span class="ws">    </span>return rv</pre>
+<pre class="line after"><span class="ws"></span> </pre></div>
+</div>
+
+<li><div class="frame" id="frame-1561285844384">
+  <h4>File <cite class="filename">"E:\ganpati website\venv\Lib\site-packages\jinja2\environment.py"</cite>,
+      line <em class="line">1295</em>,
+      in <code class="function">render</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">        </span>ctx = self.new_context(dict(*args, **kwargs))</pre>
+<pre class="line before"><span class="ws"></span> </pre>
+<pre class="line before"><span class="ws">        </span>try:</pre>
+<pre class="line before"><span class="ws">            </span>return self.environment.concat(self.root_render_func(ctx))  # type: ignore</pre>
+<pre class="line before"><span class="ws">        </span>except Exception:</pre>
+<pre class="line current"><span class="ws">            </span>self.environment.handle_exception()
+<span class="ws">            </span>^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">    </span>async def render_async(self, *args: t.Any, **kwargs: t.Any) -&gt; str:</pre>
+<pre class="line after"><span class="ws">        </span>&#34;&#34;&#34;This works similar to :meth:`render` but returns a coroutine</pre>
+<pre class="line after"><span class="ws">        </span>that when awaited returns the entire rendered template string.  This</pre>
+<pre class="line after"><span class="ws">        </span>requires the async feature to be enabled.</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1561285845664">
+  <h4>File <cite class="filename">"E:\ganpati website\venv\Lib\site-packages\jinja2\environment.py"</cite>,
+      line <em class="line">942</em>,
+      in <code class="function">handle_exception</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">        </span>&#34;&#34;&#34;Exception handling helper.  This is used internally to either raise</pre>
+<pre class="line before"><span class="ws">        </span>rewritten exceptions or return a rendered traceback for the template.</pre>
+<pre class="line before"><span class="ws">        </span>&#34;&#34;&#34;</pre>
+<pre class="line before"><span class="ws">        </span>from .debug import rewrite_traceback_stack</pre>
+<pre class="line before"><span class="ws"></span> </pre>
+<pre class="line current"><span class="ws">        </span>raise rewrite_traceback_stack(source=source)
+<span class="ws">        </span>^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">    </span>def join_path(self, template: str, parent: str) -&gt; str:</pre>
+<pre class="line after"><span class="ws">        </span>&#34;&#34;&#34;Join a template with the parent.  By default all the lookups are</pre>
+<pre class="line after"><span class="ws">        </span>relative to the loader root so this method returns the `template`</pre>
+<pre class="line after"><span class="ws">        </span>parameter unchanged, but if the paths should be relative to the</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1561285844064">
+  <h4>File <cite class="filename">"E:\ganpati website\templates\login.html"</cite>,
+      line <em class="line">209</em>,
+      in <code class="function">top-level template code</code></h4>
+  <div class="source "><pre class="line before"><span class="ws">            </span>&lt;div style=&#34;font-size: 0.9rem; color: #ffb703; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px;&#34;&gt;</pre>
+<pre class="line before"><span class="ws">                </span>🚩 ॐ गं गणपतये नमः 🚩</pre>
+<pre class="line before"><span class="ws">            </span>&lt;/div&gt;</pre>
+<pre class="line before"><span class="ws"></span> </pre>
+<pre class="line before"><span class="ws">            </span>&lt;h1 class=&#34;divine-title&#34;&gt;</pre>
+<pre class="line current"><span class="ws">                </span>{{ settings.mandal_name }}</pre>
+<pre class="line after"><span class="ws">            </span>&lt;/h1&gt;</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">            </span>&lt;p class=&#34;divine-subtitle&#34;&gt;</pre>
+<pre class="line after"><span class="ws">                </span>{{ settings.tagline }}</pre>
+<pre class="line after"><span class="ws">            </span>&lt;/p&gt;</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1561285850624">
+  <h4>File <cite class="filename">"E:\ganpati website\venv\Lib\site-packages\jinja2\environment.py"</cite>,
+      line <em class="line">490</em>,
+      in <code class="function">getattr</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">    </span>def getattr(self, obj: t.Any, attribute: str) -&gt; t.Any:</pre>
+<pre class="line before"><span class="ws">        </span>&#34;&#34;&#34;Get an item or attribute of an object but prefer the attribute.</pre>
+<pre class="line before"><span class="ws">        </span>Unlike :meth:`getitem` the attribute *must* be a string.</pre>
+<pre class="line before"><span class="ws">        </span>&#34;&#34;&#34;</pre>
+<pre class="line before"><span class="ws">        </span>try:</pre>
+<pre class="line current"><span class="ws">            </span>return getattr(obj, attribute)
+<span class="ws">            </span>       ^^^^^^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws">        </span>except AttributeError:</pre>
+<pre class="line after"><span class="ws">            </span>pass</pre>
+<pre class="line after"><span class="ws">        </span>try:</pre>
+<pre class="line after"><span class="ws">            </span>return obj[attribute]</pre>
+<pre class="line after"><span class="ws">        </span>except (TypeError, LookupError, AttributeError):</pre></div>
+</div>
+</ul>
+  <blockquote>jinja2.exceptions.UndefinedError: &#39;settings&#39; is undefined
+</blockquote>
+</div>
+
+<div class="plain">
+    <p>
+      This is the Copy/Paste friendly version of the traceback.
+    </p>
+    <textarea cols="50" rows="10" name="code" readonly>Traceback (most recent call last):
+  File &#34;E:\ganpati website\venv\Lib\site-packages\flask\app.py&#34;, line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &#34;E:\ganpati website\venv\Lib\site-packages\flask\app.py&#34;, line 1514, in wsgi_app
+    response = self.handle_exception(e)
+  File &#34;E:\ganpati website\venv\Lib\site-packages\flask_cors\extension.py&#34;, line 206, in wrapped_function
+    return cors_after_request(app_any.make_response(f(*args, **kwargs)))
+                                                    ~^^^^^^^^^^^^^^^^^
+  File &#34;E:\ganpati website\venv\Lib\site-packages\flask\app.py&#34;, line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File &#34;E:\ganpati website\venv\Lib\site-packages\flask\app.py&#34;, line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File &#34;E:\ganpati website\venv\Lib\site-packages\flask_cors\extension.py&#34;, line 206, in wrapped_function
+    return cors_after_request(app_any.make_response(f(*args, **kwargs)))
+                                                    ~^^^^^^^^^^^^^^^^^
+  File &#34;E:\ganpati website\venv\Lib\site-packages\flask\app.py&#34;, line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File &#34;E:\ganpati website\venv\Lib\site-packages\flask\app.py&#34;, line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File &#34;E:\ganpati website\app.py&#34;, line 45, in login
+    return render_template(&#39;login.html&#39;)
+  File &#34;E:\ganpati website\venv\Lib\site-packages\flask\templating.py&#34;, line 151, in render_template
+    return _render(app, template, context)
+  File &#34;E:\ganpati website\venv\Lib\site-packages\flask\templating.py&#34;, line 132, in _render
+    rv = template.render(context)
+  File &#34;E:\ganpati website\venv\Lib\site-packages\jinja2\environment.py&#34;, line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File &#34;E:\ganpati website\venv\Lib\site-packages\jinja2\environment.py&#34;, line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File &#34;E:\ganpati website\templates\login.html&#34;, line 209, in top-level template code
+    {{ settings.mandal_name }}
+    ^^^^^^^^^
+  File &#34;E:\ganpati website\venv\Lib\site-packages\jinja2\environment.py&#34;, line 490, in getattr
+    return getattr(obj, attribute)
+jinja2.exceptions.UndefinedError: &#39;settings&#39; is undefined
+</textarea>
+</div>
+<div class="explanation">
+  The debugger caught an exception in your WSGI application.  You can now
+  look at the traceback which led to the error.  <span class="nojavascript">
+  If you enable JavaScript you can also use additional features such as code
+  execution (if the evalex feature is enabled), automatic pasting of the
+  exceptions and much more.</span>
+</div>
+      <div class="footer">
+        Brought to you by <strong class="arthur">DON'T PANIC</strong>, your
+        friendly Werkzeug powered traceback interpreter.
+      </div>
+    </div>
+
+    <div class="pin-prompt">
+      <div class="inner">
+        <h3>Console Locked</h3>
+        <p>
+          The console is locked and needs to be unlocked by entering the PIN.
+          You can find the PIN printed out on the standard output of your
+          shell that runs the server.
+        <form>
+          <p>PIN:
+            <input type=text name=pin size=14>
+            <input type=submit name=btn value="Confirm Pin">
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
+
+<!--
+
+Traceback (most recent call last):
+  File "E:\ganpati website\venv\Lib\site-packages\flask\app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\ganpati website\venv\Lib\site-packages\flask\app.py", line 1514, in wsgi_app
+    response = self.handle_exception(e)
+  File "E:\ganpati website\venv\Lib\site-packages\flask_cors\extension.py", line 206, in wrapped_function
+    return cors_after_request(app_any.make_response(f(*args, **kwargs)))
+                                                    ~^^^^^^^^^^^^^^^^^
+  File "E:\ganpati website\venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "E:\ganpati website\venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "E:\ganpati website\venv\Lib\site-packages\flask_cors\extension.py", line 206, in wrapped_function
+    return cors_after_request(app_any.make_response(f(*args, **kwargs)))
+                                                    ~^^^^^^^^^^^^^^^^^
+  File "E:\ganpati website\venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\ganpati website\venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "E:\ganpati website\app.py", line 45, in login
+    return render_template('login.html')
+  File "E:\ganpati website\venv\Lib\site-packages\flask\templating.py", line 151, in render_template
+    return _render(app, template, context)
+  File "E:\ganpati website\venv\Lib\site-packages\flask\templating.py", line 132, in _render
+    rv = template.render(context)
+  File "E:\ganpati website\venv\Lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "E:\ganpati website\venv\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "E:\ganpati website\templates\login.html", line 209, in top-level template code
+    {{ settings.mandal_name }}
+    ^^^^^^^^^
+  File "E:\ganpati website\venv\Lib\site-packages\jinja2\environment.py", line 490, in getattr
+    return getattr(obj, attribute)
+jinja2.exceptions.UndefinedError: 'settings' is undefined
+
+
+-->

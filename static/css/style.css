@@ -1,0 +1,559 @@
+/* Traditional Marathi Ganeshotsav Mandal Portal CSS - Expanded Slider, Compact Space & Full Mobile/F12 Responsive Layout */
+@import url('https://fonts.googleapis.com/css2?family=Khand:wght@600;700&family=Poppins:wght@400;500;600;700&display=swap');
+
+:root {
+    --primary: #d84315;
+    --primary-dark: #b71c1c;
+    --gold: #ffb703;
+    --gold-dark: #f59e0b;
+    --bg-dark: #2a0505;
+    --bg-card: #ffffff;
+    --text-dark: #1e293b;
+    --border-gold: #ffe082;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', 'Khand', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+body {
+    background-color: #230303;
+    background-image: radial-gradient(#4d0707 1px, transparent 1px);
+    background-size: 18px 18px;
+    color: #ffffff;
+    min-height: 100vh;
+    padding-bottom: 20px;
+}
+
+/* Festive Mandal Header */
+.mandal-top-header {
+    background: linear-gradient(135deg, #b71c1c, #d84315, #9a031e);
+    color: #ffffff;
+    text-align: center;
+    padding: 0.8rem 0.6rem 0.6rem;
+    border-bottom: 3px solid #ffb703;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.mandal-top-header h1 {
+    font-family: 'Khand', sans-serif;
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    line-height: 1.1;
+    word-break: break-word;
+}
+
+.mandal-top-header p.subtitle {
+    font-size: 0.82rem;
+    color: #ffe082;
+    margin-top: 1px;
+    font-weight: 600;
+}
+
+.header-links {
+    margin-top: 0.4rem;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.link-btn {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 0.75rem;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.link-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* EXPANDED PHOTO & VIDEO SHOWCASE SLIDER */
+.photo-container {
+    max-width: 950px;
+    margin: 0.4rem auto 0.4rem;
+    padding: 0 0.6rem;
+}
+
+.slider-box {
+    position: relative;
+    width: 100%;
+    height: 52vh;
+    min-height: 360px;
+    max-height: 520px;
+    background: #000;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 3px solid #ffb703;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+}
+
+.slide {
+    display: none;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.slide.active {
+    display: block;
+    animation: fadeIn 0.4s ease;
+}
+
+/* Background Blurred Image Layer for Custom Size Auto-Fit */
+.slide-bg-blur {
+    position: absolute;
+    inset: -20px;
+    background-size: cover;
+    background-position: center;
+    filter: blur(22px) brightness(0.5);
+    transform: scale(1.18);
+}
+
+/* Foreground Centered Image */
+.slide-img-main {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    margin: 0 auto;
+}
+
+.slide-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.92));
+    color: #fff;
+    padding: 1.5rem 0.8rem 0.6rem;
+}
+
+.slide-caption h3 {
+    font-family: 'Khand', sans-serif;
+    font-size: 1.35rem;
+    color: #ffb703;
+}
+
+.slider-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.3);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.slider-arrow.prev { left: 8px; }
+.slider-arrow.next { right: 8px; }
+
+/* 2 COMPACT SIDE-BY-SIDE ACTION BUTTONS */
+.action-buttons-container {
+    max-width: 950px;
+    margin: 0.5rem auto 0.8rem;
+    padding: 0 0.6rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.big-village-btn {
+    background: linear-gradient(135deg, #d84315, #b71c1c);
+    color: #ffffff;
+    border: 1.5px solid #ffb703;
+    border-radius: 14px;
+    padding: 10px 6px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    transition: transform 0.2s, background 0.2s;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.big-village-btn:hover, .big-village-btn:active {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, #ff4500, #d84315);
+}
+
+.big-village-btn.gold-theme {
+    background: linear-gradient(135deg, #ffb703, #d97706);
+    color: #000000;
+    border-color: #ffffff;
+}
+
+.big-village-btn-icon {
+    font-size: 1.3rem;
+    margin-bottom: 1px;
+}
+
+.big-village-btn-title {
+    font-family: 'Khand', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.big-village-btn-sub {
+    font-size: 0.72rem;
+    opacity: 0.9;
+    margin-top: 1px;
+    white-space: nowrap;
+}
+
+/* Modals */
+.modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    align-items: center;
+    justify-content: center;
+    padding: 0.8rem;
+}
+
+.modal-backdrop.active {
+    display: flex;
+}
+
+.modal-window {
+    background: #ffffff;
+    color: #1e293b;
+    border-radius: 18px;
+    border: 2px solid #ffb703;
+    width: 100%;
+    max-width: 420px;
+    padding: 1.4rem;
+    position: relative;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+    max-height: 88vh;
+    overflow-y: auto;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #f1f5f9;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.input-group {
+    margin-bottom: 0.8rem;
+}
+
+.input-label {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 0.2rem;
+}
+
+.nova-input {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    font-size: 0.92rem;
+    color: #1e293b;
+    background: #f8fafc;
+    transition: border-color 0.2s;
+}
+
+.nova-input:focus {
+    outline: none;
+    border-color: #d84315;
+    background: #ffffff;
+}
+
+.btn-nova-submit {
+    width: 100%;
+    padding: 0.85rem;
+    background: linear-gradient(135deg, #d84315, #b71c1c);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: 'Khand', sans-serif;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(216,67,21,0.3);
+    transition: transform 0.2s;
+}
+
+.btn-nova-submit:hover {
+    transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   ADMIN DASHBOARD COMPONENT STYLES (STAT CARDS, TABS, BADGES, BUTTONS)
+   ========================================================================== */
+
+/* 4-Card Analytics Grid (2x2 on Mobile, 4x1 on Desktop) */
+.admin-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 640px) {
+    .admin-stat-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+}
+
+.admin-stat-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 0.85rem 0.6rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.admin-stat-title {
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 4px;
+    line-height: 1.2;
+}
+
+.admin-stat-val {
+    font-family: 'Khand', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+/* 2-Line Admin Menu Grid (2x2 Grid Layout for Mobile & Desktop) */
+.admin-menu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 1.2rem;
+}
+
+.admin-menu-grid .tab-btn {
+    flex: none;
+    width: 100%;
+    padding: 10px 8px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-align: center;
+    border-radius: 12px;
+    white-space: normal;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    min-height: 48px;
+}
+
+/* Touch-Scrollable Navigation Tabs Fallback */
+.tab-btn-group {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1.2rem;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.tab-btn-group::-webkit-scrollbar {
+    height: 4px;
+}
+.tab-btn-group::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.tab-btn {
+    flex: 0 0 auto;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    color: #475569;
+    border-radius: 20px;
+    padding: 7px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.tab-btn:hover {
+    border-color: #d84315;
+    color: #d84315;
+}
+
+.tab-btn.active {
+    background: linear-gradient(135deg, #d84315, #b71c1c);
+    color: #ffffff;
+    border-color: #d84315;
+    box-shadow: 0 4px 12px rgba(216, 67, 21, 0.3);
+}
+
+/* WhatsApp Action & Table Buttons */
+.btn-wa-action {
+    background: #25d366;
+    color: #ffffff !important;
+    border: none;
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 2px 5px rgba(37,211,102,0.3);
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn-wa-action:hover {
+    background: #128c7e;
+}
+
+.btn-action-sm {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 5px 9px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    color: #334155 !important;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn-action-sm:hover {
+    background: #e2e8f0;
+}
+
+/* Status Badges */
+.badge-status {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.badge-verified {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.badge-pending {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+/* Admin Responsive Table Container */
+.admin-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+}
+
+/* MOBILE F12 RESPONSIVE FIXES (320px to 480px Viewports) */
+@media (max-width: 480px) {
+    .mandal-top-header h1 {
+        font-size: 1.4rem;
+    }
+    .mandal-top-header p.subtitle {
+        font-size: 0.75rem;
+    }
+    .slider-box {
+        height: 48vh;
+        min-height: 310px;
+        max-height: 420px;
+        border-radius: 14px;
+    }
+    .big-village-btn {
+        padding: 8px 4px;
+        border-radius: 12px;
+    }
+    .big-village-btn-icon {
+        font-size: 1.15rem;
+    }
+    .big-village-btn-title {
+        font-size: 1.05rem;
+    }
+    .big-village-btn-sub {
+        font-size: 0.65rem;
+    }
+    .modal-window {
+        padding: 1.1rem 0.9rem;
+        border-radius: 16px;
+        max-height: 90vh;
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
