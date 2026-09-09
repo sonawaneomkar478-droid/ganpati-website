@@ -176,8 +176,12 @@
             </div>
 
             <div style="display: flex; justify-content: center; gap: 12px; margin-top: 1.8rem; flex-wrap: wrap;" class="btn-print-group">
-                <button onclick="downloadReceiptPDF()" class="btn-nav btn-nav-primary" style="padding: 10px 20px; font-size: 0.95rem; cursor: pointer; background: linear-gradient(135deg, #d84315, #b71c1c);">
-                    📥 PDF डाउनलोड करा (Download PDF)
+                <button onclick="downloadReceiptImage()" class="btn-nav btn-nav-primary" style="padding: 10px 20px; font-size: 0.95rem; cursor: pointer; background: linear-gradient(135deg, #d84315, #b71c1c);">
+                    🖼️ फोटो डाउनलोड करा (Download Image)
+                </button>
+
+                <button onclick="downloadReceiptPDF()" class="btn-nav btn-nav-outline" style="padding: 10px 20px; font-size: 0.95rem; cursor: pointer;">
+                    📥 PDF डाउनलोड करा
                 </button>
 
                 <button onclick="window.print()" class="btn-nav btn-nav-outline" style="padding: 10px 20px; font-size: 0.95rem; cursor: pointer;">
@@ -195,6 +199,33 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
+        function downloadReceiptImage() {
+            const btnGroup = document.querySelector('.btn-print-group');
+            if (btnGroup) btnGroup.style.display = 'none';
+
+            const element = document.querySelector('.receipt-card');
+            html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                scrollY: 0,
+                scrollX: 0,
+                windowWidth: 850,
+                backgroundColor: '#ffffff'
+            }).then(canvas => {
+                if (btnGroup) btnGroup.style.display = 'flex';
+                const image = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.download = 'Ganpati_Vargani_Receipt_{{ record.receipt_no }}.png';
+                link.href = image;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }).catch(e => {
+                if (btnGroup) btnGroup.style.display = 'flex';
+                console.error(e);
+            });
+        }
+
         function downloadReceiptPDF() {
             const btnGroup = document.querySelector('.btn-print-group');
             if (btnGroup) btnGroup.style.display = 'none';
