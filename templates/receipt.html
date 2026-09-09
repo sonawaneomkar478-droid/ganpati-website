@@ -201,10 +201,10 @@
 
             const element = document.querySelector('.receipt-card');
             const opt = {
-                margin:       0.1,
+                margin:       [0.2, 0.2, 0.2, 0.2],
                 filename:     'Ganpati_Vargani_Receipt_{{ record.receipt_no }}.pdf',
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true },
+                html2canvas:  { scale: 2, useCORS: true, scrollY: 0, scrollX: 0, windowWidth: 850, logging: false },
                 jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
             };
             

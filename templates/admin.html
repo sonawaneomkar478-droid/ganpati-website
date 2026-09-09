@@ -645,72 +645,76 @@
             document.getElementById('pdfPaymentMode').innerText = paymentMode || 'Cash';
 
             const element = document.getElementById('pdfContainer');
+            
             const opt = {
-                margin:       0.15,
+                margin:       [0.2, 0.2, 0.2, 0.2],
                 filename:     `Ganpati_Vargani_Receipt_${receiptNo}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true },
+                html2canvas:  { scale: 2, useCORS: true, scrollY: 0, scrollX: 0, windowWidth: 850, logging: false },
                 jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
             };
 
             html2pdf().set(opt).from(element).save().then(() => {
-                alert(`✅ पावतीची PDF फाईल (Ganpati_Vargani_Receipt_${receiptNo}.pdf) डाऊनलोड झाली आहे!\n\nआता WhatsApp उघडत आहे. WhatsApp मध्ये खालील अटॅचमेंट (📎) आयकॉनवर क्लिक करून डाउनलोड झालेली PDF पावती फाईल पाठवा.`);
+                alert(`✅ पावतीची PDF फाईल (Ganpati_Vargani_Receipt_${receiptNo}.pdf) डाऊनलोड झाली आहे!\n\nआता WhatsApp उघडत आहे. WhatsApp मध्ये अटॅचमेंट (📎) आयकॉनवर क्लिक करून डाउनलोड झालेली PDF पावती फाईल पाठवा.`);
                 const mandalName = "{{ settings.mandal_name or 'श्री गणेशोत्सव मित्र मंडळ' }}";
                 const waText = `🚩 ${mandalName} 🚩\n\nनमस्कार ${name},\nआपली ₹${amount} वर्गणी जमा झाली असून मंडळाकडून पावती मंजूर करण्यात आली आहे!\n\nपावती क्रमांक: ${receiptNo}\n(टीप: डाउनलोड झालेली PDF पावती सोबत जोडली आहे)\n\nमंडळाकडून आपले मनःपूर्वक आभार!\nगणपती बाप्पा मोरया! 🚩`;
                 const encoded = encodeURIComponent(waText);
                 window.open(`https://api.whatsapp.com/send?phone=91${mobile}&text=${encoded}`, '_blank');
             }).catch(e => {
-                alert('❌ PDF जनरेट करण्यात अडचण आली.');
+                console.error('PDF error:', e);
+                alert('❌ PDF जनरेट करण्यात अडचण आली. कृपया पुन्हा प्रयत्न करा.');
             });
         }
     </script>
 
-    <!-- Hidden Off-Screen Receipt Template for PDF Generator -->
-    <div id="pdfContainer" style="position: absolute; left: -9999px; top: -9999px; width: 550px; background: #ffffff; padding: 25px; border: 3px double #ffb703; border-radius: 16px; font-family: 'Poppins', sans-serif; color: #1e293b;">
-        <div style="text-align: center; border-bottom: 2px dashed #d84315; padding-bottom: 12px; margin-bottom: 15px;">
-            <div style="font-size: 0.85rem; color: #d84315; font-weight: 700;">🚩 श्री गणेशाय नमः 🚩</div>
-            <h2 id="pdfMandalName" style="font-family: 'Khand', sans-serif; font-size: 2rem; color: #9a031e; margin: 4px 0;">{{ settings.mandal_name }}</h2>
-            <p style="font-size: 0.82rem; color: #64748b;">{{ settings.address }} | संपर्क: {{ settings.phone_number }}</p>
-            <div style="margin-top: 8px; font-size: 1.15rem; font-weight: 700; color: #d84315;">🚩 अधिकृत गणेशोत्सव वर्गणी पावती 🚩</div>
-        </div>
+    <!-- Off-Screen Render Container for High-Resolution Crisp PDF Generation -->
+    <div id="pdfRenderWrapper" style="position: absolute; top: 0; left: 0; width: 600px; z-index: -9999; opacity: 1; pointer-events: none; overflow: hidden; background: #ffffff;">
+        <div id="pdfContainer" style="width: 600px; background: #ffffff; padding: 25px; border: 3.5px double #ffb703; border-radius: 16px; font-family: 'Poppins', sans-serif; color: #1e293b; box-sizing: border-box;">
+            <div style="text-align: center; border-bottom: 2px dashed #d84315; padding-bottom: 12px; margin-bottom: 15px;">
+                <div style="font-size: 0.9rem; color: #d84315; font-weight: 700;">🚩 श्री गणेशाय नमः 🚩</div>
+                <h2 id="pdfMandalName" style="font-family: 'Khand', sans-serif, system-ui; font-size: 2.2rem; color: #9a031e; margin: 4px 0; font-weight: 700;">{{ settings.mandal_name or 'श्री गणेशोत्सव मित्र मंडळ' }}</h2>
+                <p style="font-size: 0.85rem; color: #64748b; margin: 0;">{{ settings.address or 'पुणे' }} | संपर्क: {{ settings.phone_number or '9876543210' }}</p>
+                <div style="margin-top: 10px; font-size: 1.15rem; font-weight: 700; color: #d84315; background: #fff3ed; padding: 6px 12px; border-radius: 8px; display: inline-block;">🚩 अधिकृत गणेशोत्सव वर्गणी पावती 🚩</div>
+            </div>
 
-        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem;">
-            <span>पावती क्रमांक:</span>
-            <strong id="pdfReceiptNo" style="color: #9a031e; font-size: 1.1rem;">VRG-2026-0001</strong>
-        </div>
+            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-size: 1rem;">
+                <span style="color: #475569;">पावती क्रमांक:</span>
+                <strong id="pdfReceiptNo" style="color: #9a031e; font-size: 1.15rem;">VRG-2026-0001</strong>
+            </div>
 
-        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem;">
-            <span>तारीख व वेळ:</span>
-            <span id="pdfDate">--</span>
-        </div>
+            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-size: 1rem;">
+                <span style="color: #475569;">तारीख व वेळ:</span>
+                <span id="pdfDate" style="color: #1e293b; font-weight: 600;">--</span>
+            </div>
 
-        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem;">
-            <span>वर्गणीदाराचे नाव:</span>
-            <strong id="pdfName" style="color: #0f172a;">--</strong>
-        </div>
+            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-size: 1rem;">
+                <span style="color: #475569;">वर्गणीदाराचे नाव:</span>
+                <strong id="pdfName" style="color: #0f172a; font-size: 1.1rem;">--</strong>
+            </div>
 
-        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem;">
-            <span>मोबाईल नंबर:</span>
-            <span id="pdfMobile">--</span>
-        </div>
+            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-size: 1rem;">
+                <span style="color: #475569;">मोबाईल नंबर:</span>
+                <span id="pdfMobile" style="color: #1e293b; font-weight: 600;">--</span>
+            </div>
 
-        <div style="background: #fff3ed; padding: 12px; border-radius: 12px; margin: 14px 0; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 1.15rem; color: #b71c1c; font-weight: 700;">प्राप्त वर्गणी रक्कम:</span>
-            <span id="pdfAmount" style="font-size: 1.6rem; color: #d84315; font-weight: 700;">₹ 501 /-</span>
-        </div>
+            <div style="background: #fff3ed; padding: 14px 18px; border-radius: 12px; margin: 16px 0; display: flex; justify-content: space-between; align-items: center; border: 1px solid #ffcc80;">
+                <span style="font-size: 1.2rem; color: #b71c1c; font-weight: 700;">प्राप्त वर्गणी रक्कम:</span>
+                <span id="pdfAmount" style="font-size: 1.8rem; color: #d84315; font-weight: 800;">₹ 501 /-</span>
+            </div>
 
-        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem;">
-            <span>पेमेंट प्रकार:</span>
-            <span id="pdfPaymentMode">Cash</span>
-        </div>
+            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-size: 1rem;">
+                <span style="color: #475569;">पेमेंट प्रकार:</span>
+                <span id="pdfPaymentMode" style="color: #1e293b; font-weight: 600;">Cash</span>
+            </div>
 
-        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem;">
-            <span>पावती स्टेटस:</span>
-            <strong style="color: #059669;">✅ Verified (स्वीकृत व पडताळलेली)</strong>
-        </div>
+            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0; font-size: 1rem;">
+                <span style="color: #475569;">पावती स्टेटस:</span>
+                <strong style="color: #059669;">✅ Verified (स्वीकृत व पडताळलेली)</strong>
+            </div>
 
-        <div style="text-align: center; margin-top: 22px; border: 2px dashed #059669; background: #ecfdf5; padding: 10px; border-radius: 20px; color: #065f46; font-weight: 700;">
-            ✓ श्री गणेशाय नमः | मंडळाकडून मनःपूर्वक आभार!
+            <div style="text-align: center; margin-top: 24px; border: 2px dashed #059669; background: #ecfdf5; padding: 12px; border-radius: 14px; color: #065f46; font-weight: 700; font-size: 0.95rem;">
+                ✓ श्री गणेशाय नमः | मंडळाकडून मनःपूर्वक आभार!
+            </div>
         </div>
     </div>
 
