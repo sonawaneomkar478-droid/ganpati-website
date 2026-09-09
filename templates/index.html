@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ settings.mandal_name }} - श्री गणेश उत्सव</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Khand:wght@600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
@@ -33,24 +34,23 @@
         {% if gallery %}
         <div class="slider-box" id="customSlider">
             {% for item in gallery %}
-            <div class="slide {% if loop.first %}active{% endif %}">
+            <div class="slide {% if loop.first %}active{% endif %}" data-type="{{ item.type }}">
                 {% if item.type == 'video' %}
-                    {% if item.image_url.startswith('/static/') or item.image_url.endswith('.mp4') or item.image_url.endswith('.webm') or item.image_url.endswith('.mov') %}
-                        <!-- Local Video File Player (.mp4 / .mov) with Sound Control -->
-                        <div style="position:relative; width:100%; height:100%;">
-                            <video id="slide_vid_{{ loop.index }}" src="{{ item.image_url }}" controls loop playsinline preload="metadata" class="slide-img-main" style="position:relative; z-index:3; width:100%; height:100%; object-fit:contain;"></video>
-                            <button type="button" onclick="enableVideoSound('slide_vid_{{ loop.index }}')" style="position:absolute; top:12px; right:12px; z-index:10; background: linear-gradient(135deg, #d84315, #b71c1c); color:#ffffff; border:1.5px solid #ffb703; padding:6px 14px; border-radius:20px; font-size:0.8rem; font-weight:700; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.6);">
-                                🔊 आवाजासह व्हिडिओ ऐका (Sound ON)
-                            </button>
+                    {% if 'youtube.com' in item.image_url or 'youtu.be' in item.image_url %}
+                        <!-- External YouTube Video Link -->
+                        <div style="position:relative; width:100%; height:100%; background: #000;">
+                            <iframe src="{{ item.image_url }}" style="width:100%; height:100%; border:none; position:relative; z-index:3;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                         </div>
                     {% else %}
-                        <!-- YouTube / External Video Link -->
-                        <iframe src="{{ item.image_url }}" style="width:100%; height:100%; border:none; position:relative; z-index:3;" allowfullscreen></iframe>
+                        <!-- Clean Native Video Player with Full Controls at Bottom -->
+                        <div style="position:relative; width:100%; height:100%; background: #000;">
+                            <video id="slide_vid_{{ loop.index }}" src="{{ item.image_url }}" controls playsinline preload="metadata" class="slide-video-player" style="width:100%; height:100%; object-fit:contain; position:relative; z-index:5; pointer-events:auto;"></video>
+                        </div>
                     {% endif %}
                 {% else %}
-                    <!-- Perfect Custom Size Auto-Fit Image Container -->
+                    <!-- Auto-Fit Photo Container with Corrupt-Proof Fallback -->
                     <div class="slide-bg-blur" style="background-image: url('{{ item.image_url }}');"></div>
-                    <img src="{{ item.image_url }}" alt="{{ item.title }}" class="slide-img-main" loading="lazy">
+                    <img src="{{ item.image_url }}" alt="{{ item.title }}" class="slide-img-main" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=1200&q=80';">
                 {% endif %}
                 <div class="slide-caption">
                     <h3>🚩 {{ item.title }}</h3>
@@ -116,14 +116,14 @@
                     <label for="payment_mode" class="input-label">पेमेंट प्रकार (Payment Mode) *</label>
                     <select id="payment_mode" name="payment_mode" class="nova-input" onchange="toggleQrVisibility()">
                         <option value="Cash (रोख जमा)">Cash (रोख जमा)</option>
-                        <option value="Online (GPay / PhonePe / Paytm / QR)">Online (GPay / PhonePe / QR Code)</option>
+                        <option value="Online (GPay / PhonePe / QR)">Online (GPay / PhonePe / QR Code)</option>
                     </select>
                 </div>
 
                 <!-- Dynamic QR Code Container (Shows ONLY when Online is selected) -->
                 <div id="qrContainer" style="text-align: center; background: #fff8e1; border: 1.5px dashed #ffb703; padding: 10px; border-radius: 12px; margin-bottom: 0.8rem;">
                     <div style="font-weight: 700; font-size: 0.85rem; color: #b71c1c; margin-bottom: 4px;">📲 स्कॅन करून वर्गणी ट्रान्सफर करा (QR Code)</div>
-                    <img src="{{ settings.qr_code_url }}" alt="QR Code" style="width: 140px; height: 140px; object-fit: contain; border-radius: 8px; border: 1px solid #ffe082;">
+                    <img src="{{ settings.qr_code_url }}" alt="QR Code" style="width: 140px; height: 140px; object-fit: contain; border-radius: 8px; border: 1px solid #ffe082;" onerror="this.onerror=null; this.src='/static/images/default_qr.png';">
                     <div style="font-weight: 700; font-size: 0.9rem; color: #d84315; margin-top: 4px;">UPI ID: {{ settings.upi_id }}</div>
                     {% if settings.receiver_name %}
                         <div style="font-size: 0.78rem; color: #475569;">नाव: {{ settings.receiver_name }}</div>
@@ -197,13 +197,33 @@
             }
         }
 
-        // Video Sound Control
-        function enableVideoSound(id) {
+        // Video Sound Mute/Unmute Control
+        function toggleVideoSound(id, btn) {
             const vid = document.getElementById(id);
             if (vid) {
-                vid.muted = false;
-                vid.volume = 1.0;
-                vid.play().catch(e => console.log('Playback error:', e));
+                if (vid.muted) {
+                    vid.muted = false;
+                    vid.volume = 1.0;
+                    if (btn) btn.innerHTML = '🔇 आवाज बंद करा';
+                    vid.play().catch(e => console.log(e));
+                } else {
+                    vid.muted = true;
+                    if (btn) btn.innerHTML = '🔊 आवाजासह ऐका';
+                }
+            }
+        }
+
+        // Video Fullscreen (मोठा व्ह्यू) Control
+        function toggleVideoFullscreen(id) {
+            const vid = document.getElementById(id);
+            if (vid) {
+                if (vid.requestFullscreen) {
+                    vid.requestFullscreen();
+                } else if (vid.webkitRequestFullscreen) {
+                    vid.webkitRequestFullscreen();
+                } else if (vid.msRequestFullscreen) {
+                    vid.msRequestFullscreen();
+                }
             }
         }
 
@@ -217,20 +237,56 @@
         function openContactModal() { document.getElementById('contactModal').classList.add('active'); }
         function closeContactModal() { document.getElementById('contactModal').classList.remove('active'); }
 
-        // Slider Controls
+        // Smart Auto-Slider Controls (Video finish event + Photo timer)
         let currentSlide = 0;
+        let slideTimer = null;
         const slides = document.querySelectorAll('.slide');
-        
-        function showSlide(n) {
+
+        function initSmartSlider() {
             if (slides.length === 0) return;
-            slides.forEach(s => s.classList.remove('active'));
-            currentSlide = (n + slides.length) % slides.length;
-            slides[currentSlide].classList.add('active');
+            showSlide(0);
         }
 
-        function moveSlide(step) { showSlide(currentSlide + step); }
+        function showSlide(n) {
+            if (slides.length === 0) return;
 
-        setInterval(() => { moveSlide(1); }, 4000);
+            // Clear any active timer
+            if (slideTimer) clearTimeout(slideTimer);
+
+            // Pause all videos in slides
+            slides.forEach(s => {
+                s.classList.remove('active');
+                const vid = s.querySelector('video');
+                if (vid) {
+                    vid.pause();
+                }
+            });
+
+            currentSlide = (n + slides.length) % slides.length;
+            const activeSlide = slides[currentSlide];
+            activeSlide.classList.add('active');
+
+            const currentVid = activeSlide.querySelector('video');
+            if (currentVid) {
+                // For Video slide: play video and auto-advance ONLY after video ends!
+                currentVid.play().catch(e => console.log('Autoplay handled:', e));
+                currentVid.onended = function() {
+                    moveSlide(1);
+                };
+            } else {
+                // For Photo slide: wait 6 seconds then auto-advance to next slide
+                slideTimer = setTimeout(() => {
+                    moveSlide(1);
+                }, 6000);
+            }
+        }
+
+        function moveSlide(step) { 
+            showSlide(currentSlide + step); 
+        }
+
+        // Start Smart Slider on page load
+        document.addEventListener('DOMContentLoaded', initSmartSlider);
     </script>
 </body>
 </html>

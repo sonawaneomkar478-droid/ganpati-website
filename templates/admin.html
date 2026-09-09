@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Portal - {{ settings.mandal_name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Khand:wght@600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
@@ -41,19 +42,22 @@
             </div>
         </div>
 
-        <!-- 2-Line Admin Grid Menu (Click button to view section) -->
+        <!-- Admin Grid Menu Buttons -->
         <div class="admin-menu-grid">
             <button class="tab-btn active" data-tab="listTab">
                 📜 १. वर्गणी पावत्या लिस्ट
             </button>
+            <button class="tab-btn" data-tab="frontPageTab">
+                🏠 २. मुख्य पान (Front Page) एडिट करा
+            </button>
             <button class="tab-btn" data-tab="sliderTab">
-                🎬 २. फोटो व व्हिडिओ अपलोड
+                🎬 ३. फोटो व व्हिडिओ स्लाईडर
             </button>
             <button class="tab-btn" data-tab="cashTab">
-                ➕ ३. रोख वर्गणी नोंदवा
+                ➕ ४. रोख वर्गणी नोंदवा
             </button>
             <button class="tab-btn" data-tab="settingsTab">
-                ⚙️ ४. QR Code व सेटिंग्ज
+                ⚙️ ५. QR Code व बँक सेटिंग्ज
             </button>
         </div>
 
@@ -127,7 +131,66 @@
             </div>
         </div>
 
-        <!-- TAB 2: LOCAL PHOTO & VIDEO FILE UPLOAD -->
+        <!-- TAB 2: FRONT PAGE EDIT TAB -->
+        <div id="frontPageTab" class="tab-content" style="display: none;">
+            <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.2rem; max-width: 650px; margin: 0 auto;">
+                <h2 style="font-family: 'Khand', sans-serif; font-size: 1.4rem; color: #1e293b; margin-bottom: 0.3rem;">🏠 मुख्य पान (Front Page) एडिट करा</h2>
+                <p style="font-size: 0.82rem; color: #64748b; margin-bottom: 1.2rem;">वेबसाईटच्या पहिल्या पानावर (Front Page / Entrance) दिसणारे नाव, ब्रीदवाक्य, श्लोक व फोटो येथून एडिट करा.</p>
+
+                <form id="frontPageForm" enctype="multipart/form-data">
+                    
+                    <div class="input-group">
+                        <label for="fp_mandal_name" class="input-label">१. मंडळाचे नाव (Mandal Name) *</label>
+                        <input type="text" id="fp_mandal_name" name="mandal_name" class="nova-input" value="{{ settings.mandal_name }}" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="fp_tagline" class="input-label">२. टॅगलाईन / मुख्य ब्रीदवाक्य (Tagline)</label>
+                        <input type="text" id="fp_tagline" name="tagline" class="nova-input" value="{{ settings.tagline }}">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="fp_entrance_shloka" class="input-label">३. मुख्य पानावरील श्लोक / शीर्ष वाक्य (Shloka / Subtitle)</label>
+                        <input type="text" id="fp_entrance_shloka" name="entrance_shloka" class="nova-input" value="{{ settings.entrance_shloka or '🚩 ॐ गं गणपतये नमः 🚩' }}">
+                    </div>
+
+                    <!-- Mandal Photo / Banner Input -->
+                    <div style="background: #fff8e1; border: 1px solid #ffe082; border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
+                        <label class="input-label" style="color: #b71c1c; font-weight: 700; margin-bottom: 4px; display: block;">
+                            🖼️ ४. मुख्य पानाचा बॅकग्राऊंड / मंडळाचा फोटो (Banner Photo):
+                        </label>
+                        <p style="font-size: 0.78rem; color: #d84315; margin-bottom: 8px;">
+                            (येथे तुमच्या मंडळाचा किंवा गणपती बाप्पाचा फोटो निवडून सेव्ह करा, तो पहिल्या पानावरील बॅकग्राऊंडला दिसेल)
+                        </p>
+
+                        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                            {% if settings.entrance_photo_url %}
+                            <div style="text-align: center;">
+                                <div style="font-size: 0.72rem; color: #64748b; margin-bottom: 2px;">सध्याचा active फोटो:</div>
+                                <img src="{{ settings.entrance_photo_url }}" alt="Current Front Photo" style="width: 120px; height: 75px; object-fit: cover; border: 2px solid #ffb703; border-radius: 8px; background: #fff;">
+                            </div>
+                            {% endif %}
+
+                            <div style="flex: 1; min-width: 200px;">
+                                <input type="file" id="fp_entrance_photo" name="entrance_photo" class="nova-input" accept="image/*">
+                                <small style="color: #64748b; font-size: 0.75rem;">(मोबाईल/संगणकामधून नवीन फोटो निवडा)</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="fp_address" class="input-label">५. मंडळाचा पत्ता (Address)</label>
+                        <input type="text" id="fp_address" name="address" class="nova-input" value="{{ settings.address }}">
+                    </div>
+
+                    <button type="submit" class="btn-nova-submit" style="background: linear-gradient(135deg, #d84315, #b71c1c);">
+                        💾 मुख्य पान बदला (Save Front Page Changes)
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- TAB 3: LOCAL PHOTO & VIDEO FILE UPLOAD -->
         <div id="sliderTab" class="tab-content" style="display: none;">
             <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.2rem; max-width: 650px; margin: 0 auto;">
                 <h2 style="font-family: 'Khand', sans-serif; font-size: 1.4rem; color: #1e293b; margin-bottom: 1rem;">🎬 फोल्डरमधील फोटो व व्हिडिओ अपलोड करा (Upload File)</h2>
@@ -170,8 +233,20 @@
                         <input type="text" id="slide_video_url" name="video_url" class="nova-input" placeholder="https://www.youtube.com/embed/...">
                     </div>
 
-                    <button type="submit" class="btn-nova-submit" style="background: #059669;">➕ स्लाईडर मध्ये जोडा (Upload Now)</button>
+                    <button type="submit" id="sliderSubmitBtn" class="btn-nova-submit" style="background: #059669;">➕ स्लाईडर मध्ये जोडा (Upload Now)</button>
                 </form>
+
+                <!-- Live Upload Progress Bar Container (व्हिडिओ/फोटो अपलोड प्रोग्रेस बार ॲनिमेशन) -->
+                <div id="sliderProgressBox" style="display: none; margin-top: 1rem; background: #fff8e1; border: 1px solid #ffe082; border-radius: 12px; padding: 1rem;">
+                    <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 0.88rem; color: #b71c1c; margin-bottom: 6px;">
+                        <span id="sliderProgressStatus">⏳ फाईल अपलोड होत आहे...</span>
+                        <span id="sliderProgressPercent" style="color: #059669;">0%</span>
+                    </div>
+                    <div style="width: 100%; height: 18px; background: #cbd5e1; border-radius: 10px; overflow: hidden; position: relative; border: 1px solid #94a3b8;">
+                        <div id="sliderProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #ffb703, #d84315, #059669); transition: width 0.15s ease; border-radius: 10px; box-shadow: 0 0 10px rgba(255, 183, 3, 0.8);"></div>
+                    </div>
+                    <small style="color: #64748b; font-size: 0.75rem; display: block; margin-top: 6px; text-align: center;">(कृपया व्हिडिओ अपलोड पूर्ण होईपर्यंत पेज बंद करू नका)</small>
+                </div>
 
                 <!-- Current Slider Media List -->
                 <div style="margin-top: 1.5rem;">
@@ -180,7 +255,11 @@
                         {% for item in gallery %}
                         <div style="border: 1px solid #cbd5e1; border-radius: 10px; overflow: hidden; background: #f8fafc;">
                             {% if item.type == 'video' %}
-                                <div style="background: #0f172a; color: #ffb703; text-align: center; padding: 1.5rem 0; font-size: 0.8rem; font-weight: 600;">🎬 Video Slide</div>
+                                {% if 'youtube.com' in item.image_url or 'youtu.be' in item.image_url %}
+                                    <div style="background: #0f172a; color: #ffb703; text-align: center; padding: 1.5rem 0; font-size: 0.8rem; font-weight: 600;">🎬 YouTube Video</div>
+                                {% else %}
+                                    <video src="{{ item.image_url }}" style="width: 100%; height: 90px; object-fit: cover; background: #000;" preload="metadata"></video>
+                                {% endif %}
                             {% else %}
                                 <img src="{{ item.image_url }}" alt="{{ item.title }}" style="width: 100%; height: 90px; object-fit: cover;">
                             {% endif %}
@@ -230,32 +309,13 @@
             </div>
         </div>
 
-        <!-- TAB 4: QR CODE & MANDAL SETTINGS -->
+        <!-- TAB 5: QR CODE & MANDAL CONTACT SETTINGS -->
         <div id="settingsTab" class="tab-content" style="display: none;">
             <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.2rem; max-width: 650px; margin: 0 auto;">
-                <h2 style="font-family: 'Khand', sans-serif; font-size: 1.4rem; color: #1e293b; margin-bottom: 0.3rem;">⚙️ मंडळ, QR Code व संपर्क सेटिंग्ज</h2>
-                <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 1.2rem;">वेबसाईटवरील मंडळाचे नाव, संपर्क नंबर, QR Code, व UPI ID येथून कधीही बदला.</p>
+                <h2 style="font-family: 'Khand', sans-serif; font-size: 1.4rem; color: #1e293b; margin-bottom: 0.3rem;">⚙️ Payment QR Code व संपर्क नंबर सेटिंग्ज</h2>
+                <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 1.2rem;">वेबसाईटवरील ऑनलाईन वर्गणीसाठी QR Code, UPI ID आणि मंडळ पदाधिकाऱ्यांचे मोबाईल नंबर येथून अपडेट करा.</p>
 
                 <form id="settingsForm" enctype="multipart/form-data">
-                    
-                    <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
-                        <h3 style="font-size: 0.95rem; color: #b71c1c; margin-bottom: 0.8rem; border-bottom: 1px dashed #cbd5e1; padding-bottom: 4px;">🚩 १. मंडळाची मुख्य माहिती (Header Info)</h3>
-                        
-                        <div class="input-group">
-                            <label for="mandal_name" class="input-label">मंडळाचे नाव *</label>
-                            <input type="text" id="mandal_name" name="mandal_name" class="nova-input" value="{{ settings.mandal_name }}" required>
-                        </div>
-
-                        <div class="input-group">
-                            <label for="tagline" class="input-label">टॅगलाईन / ब्रीदवाक्य</label>
-                            <input type="text" id="tagline" name="tagline" class="nova-input" value="{{ settings.tagline }}">
-                        </div>
-
-                        <div class="input-group">
-                            <label for="address" class="input-label">मंडळाचा मुख्य पत्ता (Address)</label>
-                            <input type="text" id="address" name="address" class="nova-input" value="{{ settings.address }}">
-                        </div>
-                    </div>
 
                     <div style="background: #fff8e1; border: 1px solid #ffe082; padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
                         <h3 style="font-family: 'Khand', sans-serif; font-size: 1.1rem; color: #d84315; margin-bottom: 0.8rem; border-bottom: 1px dashed #ffe082; padding-bottom: 4px;">📲 २. Payment QR Code व UPI विवरण</h3>
@@ -338,24 +398,72 @@
             });
         }
 
-        // Upload Slider Media Form Submit
+        // Upload Slider Media Form Submit with Real-Time Progress Bar
         const sliderForm = document.getElementById('sliderUploadForm');
         if (sliderForm) {
-            sliderForm.addEventListener('submit', async (e) => {
+            sliderForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                const formData = new FormData(sliderForm);
-                try {
-                    const res = await fetch('/api/gallery/upload', { method: 'POST', body: formData });
-                    const data = await res.json();
-                    if (data.success) {
-                        alert('✅ स्लाईडर फोटो/व्हिडिओ अपलोड झाला!');
-                        location.reload();
-                    } else {
-                        alert('❌ एरर: ' + data.message);
-                    }
-                } catch(err) {
-                    alert('❌ नेटवर्क एरर');
+                
+                const submitBtn = document.getElementById('sliderSubmitBtn');
+                const progressBox = document.getElementById('sliderProgressBox');
+                const progressBar = document.getElementById('sliderProgressBar');
+                const progressPercent = document.getElementById('sliderProgressPercent');
+                const progressStatus = document.getElementById('sliderProgressStatus');
+
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerText = '⏳ अपलोड सुरू आहे...';
                 }
+                if (progressBox) progressBox.style.display = 'block';
+                if (progressBar) progressBar.style.width = '0%';
+                if (progressPercent) progressPercent.innerText = '0%';
+
+                const formData = new FormData(sliderForm);
+                const xhr = new XMLHttpRequest();
+
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        if (progressBar) progressBar.style.width = percent + '%';
+                        if (progressPercent) progressPercent.innerText = percent + '%';
+                        if (progressStatus) {
+                            progressStatus.innerText = percent < 100 ? `⏳ फाईल अपलोड होत आहे... ${percent}%` : `✅ सेव्ह होत आहे, कृपया थांबा...`;
+                        }
+                    }
+                });
+
+                xhr.addEventListener('load', () => {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = '➕ स्लाईडर मध्ये जोडा (Upload Now)';
+                    }
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        if (data.success) {
+                            if (progressStatus) progressStatus.innerText = '✅ अपलोड यशस्वी झाले!';
+                            alert('✅ स्लाईडर फोटो/व्हिडिओ यशस्वीरित्या अपलोड झाला!');
+                            location.reload();
+                        } else {
+                            if (progressBox) progressBox.style.display = 'none';
+                            alert('❌ एरर: ' + data.message);
+                        }
+                    } catch(err) {
+                        if (progressBox) progressBox.style.display = 'none';
+                        alert('❌ अपलोड रेस्पॉन्स एरर');
+                    }
+                });
+
+                xhr.addEventListener('error', () => {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = '➕ स्लाईडर मध्ये जोडा (Upload Now)';
+                    }
+                    if (progressBox) progressBox.style.display = 'none';
+                    alert('❌ नेटवर्क एरर! फाईल अपलोड अपूर्ण राहिले.');
+                });
+
+                xhr.open('POST', '/api/gallery/upload');
+                xhr.send(formData);
             });
         }
 

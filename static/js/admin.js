@@ -83,6 +83,31 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Front Page Edit Form
+    const frontPageForm = document.getElementById('frontPageForm');
+    if (frontPageForm) {
+        frontPageForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(frontPageForm);
+
+            try {
+                const res = await fetch('/api/settings', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ मुख्य पानाची माहिती (Front Page Info) अपडेट झाली!');
+                    location.reload();
+                } else {
+                    alert('❌ एरर: ' + data.message);
+                }
+            } catch (e) {
+                alert('❌ नेटवर्क एरर');
+            }
+        });
+    }
+
     // Settings & QR Code Update Form
     const settingsForm = document.getElementById('settingsForm');
     if (settingsForm) {

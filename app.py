@@ -27,6 +27,12 @@ except Exception as e:
 
 ADMIN_MOBILE = "7756806580"
 
+@app.after_request
+def add_header(response):
+    if request.path.startswith('/static/'):
+        response.headers['Cache-Control'] = 'public, max-age=31536000'
+    return response
+
 # LOGIN & AUTH ROUTES
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -206,24 +212,27 @@ def delete_record(record_id):
 @app.route('/api/gallery/upload', methods=['POST'])
 def upload_gallery():
     try:
-        title = request.form.get('title', 'गणेशोत्सव आठवणी')
-        year = request.form.get('year', '2025')
-        media_type = request.form.get('type', 'photo')  # photo or video
+        title = request.form.get('title', 'गणेशोत्सव आठवणी').strip()
+        year = request.form.get('year', '2025').strip()
+        upload_type = request.form.get('type', 'photo')
         video_url = request.form.get('video_url', '').strip()
 
         image_url = ""
+        media_type = "photo"
 
-        # Case 1: Video file uploaded from local folder
+        # Case 1: Video file uploaded from local folder / phone
         if 'video_file' in request.files and request.files['video_file'].filename:
             file = request.files['video_file']
             if file and allowed_file(file.filename):
                 filename = f"vid_{int(datetime.datetime.now().timestamp())}_{secure_filename(file.filename)}"
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 file.save(filepath)
+                
+                # Direct static URL for fast streaming playback in HTML5 video
                 image_url = f"/static/uploads/{filename}"
                 media_type = "video"
 
-        # Case 2: Photo file uploaded from local folder (Permanent Cloud Base64 Storage)
+        # Case 2: Photo file uploaded from local folder / phone
         elif 'photo' in request.files and request.files['photo'].filename:
             file = request.files['photo']
             if file and allowed_file(file.filename):
@@ -235,14 +244,21 @@ def upload_gallery():
 
         # Case 3: External YouTube Video Link
         elif video_url:
+            if 'watch?v=' in video_url:
+                v_id = video_url.split('watch?v=')[1].split('&')[0]
+                video_url = f"https://www.youtube.com/embed/{v_id}"
+            elif 'youtu.be/' in video_url:
+                v_id = video_url.split('youtu.be/')[1].split('?')[0]
+                video_url = f"https://www.youtube.com/embed/{v_id}"
+            
             image_url = video_url
             media_type = "video"
 
         if not image_url:
-            return jsonify({'success': False, 'message': 'कृपया संगणकातील फोटो/व्हिडिओ फाईल निवडा किंवा व्हिडिओ लिंक टाका.'}), 400
+            return jsonify({'success': False, 'message': 'कृपया संगणकामधील/मोबाईलमधील फोटो/व्हिडिओ फाईल निवडा किंवा यूट्यूब लिंक टाका.'}), 400
 
         item = db.add_gallery_item(title, image_url, media_type, year)
-        return jsonify({'success': True, 'message': 'स्लाईडर फोटो/व्हिडिओ यशस्वीरित्या अपलोड झाला!', 'item': item})
+        return jsonify({'success': True, 'message': 'स्लाईडर फोटो/व्हिडिओ यशस्वीरित्या जोडला गेला!', 'item': item})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
@@ -261,6 +277,7 @@ def manage_settings():
         try:
             mandal_name = request.form.get('mandal_name', '')
             tagline = request.form.get('tagline', '')
+            entrance_shloka = request.form.get('entrance_shloka', '')
             upi_id = request.form.get('upi_id', '')
             receiver_name = request.form.get('receiver_name', '')
             phone_number = request.form.get('phone_number', '')
@@ -273,6 +290,7 @@ def manage_settings():
             update_data = {
                 'mandal_name': mandal_name,
                 'tagline': tagline,
+                'entrance_shloka': entrance_shloka,
                 'upi_id': upi_id,
                 'receiver_name': receiver_name,
                 'phone_number': phone_number,
@@ -291,8 +309,16 @@ def manage_settings():
                     encoded = base64.b64encode(file_bytes).decode('utf-8')
                     update_data['qr_code_url'] = f"data:{mime_type};base64,{encoded}"
 
+            if 'entrance_photo' in request.files:
+                file = request.files['entrance_photo']
+                if file and allowed_file(file.filename):
+                    mime_type = file.mimetype or "image/jpeg"
+                    file_bytes = file.read()
+                    encoded = base64.b64encode(file_bytes).decode('utf-8')
+                    update_data['entrance_photo_url'] = f"data:{mime_type};base64,{encoded}"
+
             updated = db.update_settings(update_data)
-            return jsonify({'success': True, 'message': 'मंडळ माहिती व QR Code अपडेट झाला!', 'settings': updated})
+            return jsonify({'success': True, 'message': 'मंडळ माहिती, प्रवेशद्वार फोटो व QR Code अपडेट झाला!', 'settings': updated})
         except Exception as e:
             return jsonify({'success': False, 'message': str(e)}), 500
     else:

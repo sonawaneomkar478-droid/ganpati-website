@@ -9,6 +9,8 @@ DB_NAME = os.getenv("DB_NAME", "vargani_db")
 DEFAULT_SETTINGS = {
     "mandal_name": "श्री गणेशोत्सव मित्र मंडळ, पुणे",
     "tagline": "वर्गणी संकलन व ऑनलाईन डिजिटल पावती प्रणाली २०२६",
+    "entrance_shloka": "🚩 ॐ गं गणपतये नमः 🚩",
+    "entrance_photo_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=1200&q=80",
     "upi_id": "mandalganpati@upi",
     "receiver_name": "Shri Ganeshotsav Mandal",
     "phone_number": "7756806580",
@@ -25,15 +27,22 @@ DEFAULT_SETTINGS = {
 SAMPLE_GALLERY = [
     {
         "_id": "1",
+        "title": "गणेशोत्सव विसर्जन मिरवणूक व्हिडिओ २०२६",
+        "image_url": "/static/uploads/vid_1788933034_WhatsApp_Video_2026-09-09_at_11.15.45_AM.mp4",
+        "type": "video",
+        "year": "2026"
+    },
+    {
+        "_id": "2",
         "title": "मागील वर्षातील भव्य श्री गणेश विसर्जन सोहळा २०२५",
         "image_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=1200&q=80",
         "type": "photo",
         "year": "2025"
     },
     {
-        "_id": "2",
+        "_id": "3",
         "title": "श्रींची आकर्षक आरास व महापूजा",
-        "image_url": "https://images.unsplash.com/photo-1567157577867-05ccb1388e66?auto=format&fit=crop&w=1200&q=80",
+        "image_url": "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&w=1200&q=80",
         "type": "photo",
         "year": "2025"
     }
@@ -242,6 +251,9 @@ def get_settings():
             if "contact_phone2" not in settings: settings["contact_phone2"] = "9876543210"
             if "contact_name3" not in settings: settings["contact_name3"] = "खजिनदार (Treasurer)"
             if "contact_phone3" not in settings: settings["contact_phone3"] = "9822114455"
+            if "entrance_shloka" not in settings: settings["entrance_shloka"] = "🚩 ॐ गं गणपतये नमः 🚩"
+            if "entrance_photo_url" not in settings or not settings["entrance_photo_url"] or "photo-1567157577867" in settings.get("entrance_photo_url", ""):
+                settings["entrance_photo_url"] = "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=1200&q=80"
             if "qr_code_url" not in settings or not settings["qr_code_url"]:
                 settings["qr_code_url"] = "/static/images/default_qr.png"
             return settings

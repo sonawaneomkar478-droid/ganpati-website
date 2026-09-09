@@ -1,4 +1,4 @@
-/* Traditional Marathi Ganeshotsav Mandal Portal CSS - Expanded Slider, Compact Space & Full Mobile/F12 Responsive Layout */
+/* Traditional Marathi Ganeshotsav Mandal Portal CSS - Ultra Smooth Animations & Performance Optimized */
 @import url('https://fonts.googleapis.com/css2?family=Khand:wght@600;700&family=Poppins:wght@400;500;600;700&display=swap');
 
 :root {
@@ -24,6 +24,8 @@ html, body {
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
+    scroll-behavior: smooth;
+    text-rendering: optimizeLegibility;
 }
 
 body {
@@ -35,6 +37,18 @@ body {
     padding-bottom: 20px;
 }
 
+/* TACTILE BUTTON FEEDBACK & MICRO-ANIMATIONS (EVERY CLICKABLE ELEMENT) */
+button, .btn-nova-submit, .big-village-btn, .link-btn, .tab-btn, .btn-wa-action, .btn-action-sm, .slider-arrow, .modal-close-btn {
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    user-select: none;
+    will-change: transform, box-shadow;
+}
+
+button:active, .btn-nova-submit:active, .big-village-btn:active, .link-btn:active, .tab-btn:active, .btn-wa-action:active, .btn-action-sm:active, .slider-arrow:active, .modal-close-btn:active {
+    transform: scale(0.94) translateY(1px) !important;
+    filter: brightness(1.1);
+}
+
 /* Festive Mandal Header */
 .mandal-top-header {
     background: linear-gradient(135deg, #b71c1c, #d84315, #9a031e);
@@ -42,15 +56,15 @@ body {
     text-align: center;
     padding: 0.8rem 0.6rem 0.6rem;
     border-bottom: 3px solid #ffb703;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
 }
 
 .mandal-top-header h1 {
     font-family: 'Khand', sans-serif;
-    font-size: 1.7rem;
+    font-size: 1.75rem;
     font-weight: 700;
     color: #ffffff;
-    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.6);
     line-height: 1.1;
     word-break: break-word;
 }
@@ -71,19 +85,19 @@ body {
 }
 
 .link-btn {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.18);
     color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.35);
     padding: 4px 12px;
     border-radius: 16px;
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     text-decoration: none;
     font-weight: 600;
-    transition: background 0.2s;
 }
 
 .link-btn:hover {
-    background: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
 }
 
 /* EXPANDED PHOTO & VIDEO SHOWCASE SLIDER */
@@ -115,7 +129,12 @@ body {
 
 .slide.active {
     display: block;
-    animation: fadeIn 0.4s ease;
+    animation: slidePop 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slidePop {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
 }
 
 /* Background Blurred Image Layer for Custom Size Auto-Fit */
@@ -147,6 +166,11 @@ body {
     background: linear-gradient(transparent, rgba(0, 0, 0, 0.92));
     color: #fff;
     padding: 1.5rem 0.8rem 0.6rem;
+    pointer-events: none;
+}
+
+.slide-caption h3, .slide-caption p {
+    pointer-events: none;
 }
 
 .slide-caption h3 {
@@ -160,17 +184,23 @@ body {
     top: 50%;
     transform: translateY(-50%);
     z-index: 10;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.65);
     color: #fff;
-    border: 1px solid rgba(255,255,255,0.3);
-    width: 38px;
-    height: 38px;
+    border: 1.5px solid rgba(255,255,255,0.4);
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     font-size: 1.1rem;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.slider-arrow:hover {
+    background: #d84315;
+    border-color: #ffb703;
+    transform: translateY(-50%) scale(1.08);
 }
 
 .slider-arrow.prev { left: 8px; }
@@ -183,29 +213,31 @@ body {
     padding: 0 0.6rem;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 10px;
 }
 
 .big-village-btn {
     background: linear-gradient(135deg, #d84315, #b71c1c);
     color: #ffffff;
     border: 1.5px solid #ffb703;
-    border-radius: 14px;
-    padding: 10px 6px;
+    border-radius: 16px;
+    padding: 12px 8px;
     text-align: center;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-    transition: transform 0.2s, background 0.2s;
+    box-shadow: 0 5px 18px rgba(0,0,0,0.45);
     text-decoration: none;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    position: relative;
+    overflow: hidden;
 }
 
-.big-village-btn:hover, .big-village-btn:active {
-    transform: translateY(-2px);
+.big-village-btn:hover {
+    transform: translateY(-3px) scale(1.02);
     background: linear-gradient(135deg, #ff4500, #d84315);
+    box-shadow: 0 8px 24px rgba(255, 183, 3, 0.4);
 }
 
 .big-village-btn.gold-theme {
@@ -214,27 +246,32 @@ body {
     border-color: #ffffff;
 }
 
+.big-village-btn.gold-theme:hover {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    box-shadow: 0 8px 24px rgba(251, 191, 36, 0.45);
+}
+
 .big-village-btn-icon {
-    font-size: 1.3rem;
-    margin-bottom: 1px;
+    font-size: 1.35rem;
+    margin-bottom: 2px;
 }
 
 .big-village-btn-title {
     font-family: 'Khand', sans-serif;
-    font-size: 1.25rem;
+    font-size: 1.3rem;
     font-weight: 700;
     line-height: 1.1;
     white-space: nowrap;
 }
 
 .big-village-btn-sub {
-    font-size: 0.72rem;
+    font-size: 0.74rem;
     opacity: 0.9;
-    margin-top: 1px;
+    margin-top: 2px;
     white-space: nowrap;
 }
 
-/* Modals */
+/* Modals with Ultra Smooth Entrance Animation */
 .modal-backdrop {
     display: none;
     position: fixed;
@@ -242,9 +279,16 @@ body {
     z-index: 1000;
     background: rgba(0, 0, 0, 0.85);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     align-items: center;
     justify-content: center;
     padding: 0.8rem;
+    animation: backdropFade 0.2s ease-out;
+}
+
+@keyframes backdropFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .modal-backdrop.active {
@@ -254,15 +298,28 @@ body {
 .modal-window {
     background: #ffffff;
     color: #1e293b;
-    border-radius: 18px;
-    border: 2px solid #ffb703;
+    border-radius: 20px;
+    border: 2.5px solid #ffb703;
     width: 100%;
-    max-width: 420px;
-    padding: 1.4rem;
+    max-width: 430px;
+    padding: 1.5rem;
     position: relative;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.65);
     max-height: 88vh;
     overflow-y: auto;
+    animation: modalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform, opacity;
+}
+
+@keyframes modalPopIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(25px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
 .modal-close-btn {
@@ -270,20 +327,27 @@ body {
     top: 10px;
     right: 10px;
     background: #f1f5f9;
-    border: none;
-    width: 28px;
-    height: 28px;
+    border: 1px solid #cbd5e1;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     font-weight: 700;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     display: flex;
     align-items: center;
     justify-content: center;
+    color: #475569;
+}
+
+.modal-close-btn:hover {
+    background: #ef4444;
+    color: #ffffff;
+    border-color: #ef4444;
 }
 
 .input-group {
-    margin-bottom: 0.8rem;
+    margin-bottom: 0.85rem;
 }
 
 .input-label {
@@ -296,38 +360,40 @@ body {
 
 .nova-input {
     width: 100%;
-    padding: 0.65rem 0.85rem;
+    padding: 0.7rem 0.85rem;
     border: 1.5px solid #cbd5e1;
     border-radius: 10px;
     font-size: 0.92rem;
     color: #1e293b;
     background: #f8fafc;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .nova-input:focus {
     outline: none;
     border-color: #d84315;
     background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(216, 67, 21, 0.15);
 }
 
 .btn-nova-submit {
     width: 100%;
-    padding: 0.85rem;
+    padding: 0.9rem;
     background: linear-gradient(135deg, #d84315, #b71c1c);
     color: #fff;
     border: none;
-    border-radius: 10px;
-    font-size: 1rem;
+    border-radius: 12px;
+    font-size: 1.05rem;
     font-weight: 700;
     font-family: 'Khand', sans-serif;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(216,67,21,0.3);
-    transition: transform 0.2s;
+    box-shadow: 0 4px 15px rgba(216,67,21,0.4);
 }
 
 .btn-nova-submit:hover {
     transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(216,67,21,0.5);
+    background: linear-gradient(135deg, #ff4500, #d84315);
 }
 
 /* ==========================================================================
@@ -384,63 +450,35 @@ body {
 .admin-menu-grid .tab-btn {
     flex: none;
     width: 100%;
-    padding: 10px 8px;
-    font-size: 0.88rem;
+    padding: 11px 8px;
+    font-size: 0.9rem;
     font-weight: 700;
     text-align: center;
-    border-radius: 12px;
+    border-radius: 14px;
     white-space: normal;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     min-height: 48px;
-}
-
-/* Touch-Scrollable Navigation Tabs Fallback */
-.tab-btn-group {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 1.2rem;
-    overflow-x: auto;
-    padding-bottom: 6px;
-    -webkit-overflow-scrolling: touch;
-    border-bottom: 2px solid #e2e8f0;
-}
-
-.tab-btn-group::-webkit-scrollbar {
-    height: 4px;
-}
-.tab-btn-group::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 4px;
-}
-
-.tab-btn {
-    flex: 0 0 auto;
     background: #ffffff;
     border: 1.5px solid #cbd5e1;
-    color: #475569;
-    border-radius: 20px;
-    padding: 7px 16px;
-    font-size: 0.85rem;
-    font-weight: 600;
+    color: #334155;
     cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
 }
 
-.tab-btn:hover {
+.admin-menu-grid .tab-btn:hover {
     border-color: #d84315;
     color: #d84315;
+    transform: translateY(-1px);
 }
 
-.tab-btn.active {
+.admin-menu-grid .tab-btn.active {
     background: linear-gradient(135deg, #d84315, #b71c1c);
     color: #ffffff;
     border-color: #d84315;
-    box-shadow: 0 4px 12px rgba(216, 67, 21, 0.3);
+    box-shadow: 0 4px 14px rgba(216, 67, 21, 0.4);
 }
 
 /* WhatsApp Action & Table Buttons */
@@ -449,21 +487,21 @@ body {
     color: #ffffff !important;
     border: none;
     border-radius: 8px;
-    padding: 5px 10px;
-    font-size: 0.78rem;
+    padding: 6px 12px;
+    font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    box-shadow: 0 2px 5px rgba(37,211,102,0.3);
-    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(37,211,102,0.35);
     white-space: nowrap;
 }
 
 .btn-wa-action:hover {
     background: #128c7e;
+    transform: translateY(-1px);
 }
 
 .btn-action-sm {
@@ -479,7 +517,6 @@ body {
     align-items: center;
     gap: 3px;
     color: #334155 !important;
-    transition: all 0.2s;
     white-space: nowrap;
 }
 
@@ -534,26 +571,21 @@ body {
         border-radius: 14px;
     }
     .big-village-btn {
-        padding: 8px 4px;
-        border-radius: 12px;
+        padding: 10px 4px;
+        border-radius: 14px;
     }
     .big-village-btn-icon {
-        font-size: 1.15rem;
+        font-size: 1.2rem;
     }
     .big-village-btn-title {
-        font-size: 1.05rem;
+        font-size: 1.1rem;
     }
     .big-village-btn-sub {
-        font-size: 0.65rem;
+        font-size: 0.68rem;
     }
     .modal-window {
-        padding: 1.1rem 0.9rem;
-        border-radius: 16px;
+        padding: 1.2rem 1rem;
+        border-radius: 18px;
         max-height: 90vh;
     }
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
 }
