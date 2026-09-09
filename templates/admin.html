@@ -188,7 +188,7 @@
                                 <strong>{{ item.title }}</strong>
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
                                     <span style="color: #64748b; font-size: 0.72rem;">{{ item.year }}</span>
-                                    <button onclick="deleteSliderItem('{{ item._id }}')" style="color: #dc2626; border: none; background: none; cursor: pointer; font-size: 0.75rem;">🗑️ हटवा</button>
+                                    <button onclick="deleteSliderItem('{{ item._id }}', this)" style="color: #dc2626; border: none; background: none; cursor: pointer; font-size: 0.78rem; font-weight: 700;">🗑️ हटवा</button>
                                 </div>
                             </div>
                         </div>
@@ -359,19 +359,25 @@
             });
         }
 
-        // Delete Slider Media
-        async function deleteSliderItem(id) {
+        // Instant Delete Slider Media (Zero Page Reload)
+        async function deleteSliderItem(id, btn) {
             if (!confirm('नक्की हा स्लाईडर फोटो/व्हिडिओ हटवायचा आहे का?')) return;
+            const card = btn ? btn.closest('div[style*="border"]') : null;
+            if (card) {
+                card.style.opacity = '0.2';
+                card.style.pointerEvents = 'none';
+            }
             try {
                 const res = await fetch(`/api/gallery/delete/${id}`, { method: 'DELETE' });
                 const data = await res.json();
                 if (data.success) {
-                    alert('✅ हटवला गेला.');
-                    location.reload();
+                    if (card) card.remove();
                 } else {
+                    if (card) { card.style.opacity = '1'; card.style.pointerEvents = 'auto'; }
                     alert('❌ एरर: ' + data.message);
                 }
             } catch(e) {
+                if (card) { card.style.opacity = '1'; card.style.pointerEvents = 'auto'; }
                 alert('❌ नेटवर्क एरर');
             }
         }
