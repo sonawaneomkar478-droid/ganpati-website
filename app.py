@@ -1,4 +1,5 @@
 import os
+import base64
 import datetime
 import urllib.parse
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_from_directory
@@ -222,14 +223,14 @@ def upload_gallery():
                 image_url = f"/static/uploads/{filename}"
                 media_type = "video"
 
-        # Case 2: Photo file uploaded from local folder
+        # Case 2: Photo file uploaded from local folder (Permanent Cloud Base64 Storage)
         elif 'photo' in request.files and request.files['photo'].filename:
             file = request.files['photo']
             if file and allowed_file(file.filename):
-                filename = f"slide_{int(datetime.datetime.now().timestamp())}_{secure_filename(file.filename)}"
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(filepath)
-                image_url = f"/static/uploads/{filename}"
+                mime_type = file.mimetype or "image/jpeg"
+                file_bytes = file.read()
+                encoded = base64.b64encode(file_bytes).decode('utf-8')
+                image_url = f"data:{mime_type};base64,{encoded}"
                 media_type = "photo"
 
         # Case 3: External YouTube Video Link
@@ -285,10 +286,10 @@ def manage_settings():
             if 'qr_code' in request.files:
                 file = request.files['qr_code']
                 if file and allowed_file(file.filename):
-                    filename = f"qr_{int(datetime.datetime.now().timestamp())}_{secure_filename(file.filename)}"
-                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                    file.save(filepath)
-                    update_data['qr_code_url'] = f"/static/uploads/{filename}"
+                    mime_type = file.mimetype or "image/jpeg"
+                    file_bytes = file.read()
+                    encoded = base64.b64encode(file_bytes).decode('utf-8')
+                    update_data['qr_code_url'] = f"data:{mime_type};base64,{encoded}"
 
             updated = db.update_settings(update_data)
             return jsonify({'success': True, 'message': 'मंडळ माहिती व QR Code अपडेट झाला!', 'settings': updated})
