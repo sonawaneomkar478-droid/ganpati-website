@@ -1,10 +1,12 @@
 import os
+import json
 import datetime
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
 DB_NAME = os.getenv("DB_NAME", "vargani_db")
+DATA_FILE = os.path.join(os.path.dirname(__file__), 'data_store.json')
 
 DEFAULT_SETTINGS = {
     "mandal_name": "श्री गणेशोत्सव मित्र मंडळ, पुणे",
@@ -20,27 +22,19 @@ DEFAULT_SETTINGS = {
     "contact_name3": "खजिनदार (Treasurer)",
     "contact_phone3": "9822114455",
     "qr_code_url": "/static/images/default_qr.png",
-    "address": "गणेश चौक, मुख्य रस्ता, पुणे",
-    "updated_at": datetime.datetime.now()
+    "address": "गणेश चौक, मुख्य रस्ता, पुणे"
 }
 
-SAMPLE_GALLERY = [
+DEFAULT_GALLERY = [
     {
-        "_id": "1",
-        "title": "गणेशोत्सव विसर्जन मिरवणूक व्हिडिओ २०२६",
-        "image_url": "/static/uploads/vid_1788933034_WhatsApp_Video_2026-09-09_at_11.15.45_AM.mp4",
-        "type": "video",
-        "year": "2026"
-    },
-    {
-        "_id": "2",
+        "_id": "default_1",
         "title": "मागील वर्षातील भव्य श्री गणेश विसर्जन सोहळा २०२५",
         "image_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=1200&q=80",
         "type": "photo",
         "year": "2025"
     },
     {
-        "_id": "3",
+        "_id": "default_2",
         "title": "श्रींची आकर्षक आरास व महापूजा",
         "image_url": "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&w=1200&q=80",
         "type": "photo",
@@ -48,46 +42,68 @@ SAMPLE_GALLERY = [
     }
 ]
 
+def load_json_data():
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                if data and isinstance(data, dict):
+                    return data
+        except Exception as e:
+            print(f"Error reading data_store.json: {e}")
+    
+    init_data = {
+        "settings": DEFAULT_SETTINGS.copy(),
+        "gallery": DEFAULT_GALLERY.copy(),
+        "vargani_records": []
+    }
+    save_json_data(init_data)
+    return init_data
+
+def save_json_data(data):
+    try:
+        with open(DATA_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2, default=str)
+    except Exception as e:
+        print(f"Error saving data_store.json: {e}")
+
 def get_db():
     if "mongodb+srv" in MONGO_URI or ("mongodb://" in MONGO_URI and "localhost" not in MONGO_URI):
         client = MongoClient(
             MONGO_URI,
-            serverSelectionTimeoutMS=5000,
+            serverSelectionTimeoutMS=4000,
             tls=True,
             tlsAllowInvalidCertificates=True
         )
     else:
-        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=2000)
+        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=200)
     return client[DB_NAME]
 
 def init_db():
+    local_data = load_json_data()
     try:
         db = get_db()
         if db.settings.count_documents({}) == 0:
-            db.settings.insert_one(DEFAULT_SETTINGS.copy())
-
-        if db.gallery.count_documents({}) == 0:
-            db.gallery.insert_many(SAMPLE_GALLERY.copy())
-
-        print("Database re-initialized with Gallery & Admin settings successfully!")
+            db.settings.insert_one(local_data.get("settings", DEFAULT_SETTINGS.copy()))
+        print("Database initialized successfully!")
     except Exception as e:
-        print(f"MongoDB Init Warning (using defaults): {e}")
+        print(f"MongoDB Init Info: {e}")
 
 def generate_receipt_no():
-    try:
-        db = get_db()
-        count = db.vargani_records.count_documents({}) + 1
+    records = get_all_vargani()
+    count = len(records) + 1
+    receipt_no = f"VRG-2026-{count:04d}"
+    existing_nos = {r.get("receipt_no") for r in records}
+    while receipt_no in existing_nos:
+        count += 1
         receipt_no = f"VRG-2026-{count:04d}"
-        while db.vargani_records.find_one({"receipt_no": receipt_no}):
-            count += 1
-            receipt_no = f"VRG-2026-{count:04d}"
-        return receipt_no
-    except Exception:
-        import random
-        return f"VRG-2026-{random.randint(1000, 9999)}"
+    return receipt_no
 
 def add_vargani(data):
+    rec_id = f"rec_{int(datetime.datetime.now().timestamp())}"
+    now_str = datetime.datetime.now().strftime("%d-%m-%Y %I:%M %p")
     record = {
+        "_id": rec_id,
         "receipt_no": generate_receipt_no(),
         "name": data.get("name", "").strip(),
         "mobile": data.get("mobile", "").strip(),
@@ -97,19 +113,31 @@ def add_vargani(data):
         "transaction_id": data.get("transaction_id", "").strip(),
         "status": data.get("status", "Pending"),
         "screenshot_url": data.get("screenshot_url", ""),
-        "created_at": datetime.datetime.now(),
-        "verified_at": datetime.datetime.now() if data.get("status") == "Verified" else None
+        "created_at_str": now_str,
+        "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
+    
+    # Save MongoDB
     try:
         db = get_db()
-        result = db.vargani_records.insert_one(record)
-        record["_id"] = str(result.inserted_id)
+        db_rec = record.copy()
+        db_rec["_id"] = ObjectId()
+        res = db.vargani_records.insert_one(db_rec)
+        record["_id"] = str(res.inserted_id)
     except Exception as e:
-        print(f"Database write error: {e}")
-        record["_id"] = "offline_id"
+        print(f"MongoDB record insert fail: {e}")
+
+    # Save local json
+    local_data = load_json_data()
+    v_recs = local_data.get("vargani_records", [])
+    v_recs.insert(0, record)
+    local_data["vargani_records"] = v_recs
+    save_json_data(local_data)
+
     return record
 
 def get_all_vargani(status=None, search=None):
+    records = []
     try:
         db = get_db()
         query = {}
@@ -122,124 +150,153 @@ def get_all_vargani(status=None, search=None):
                 {"receipt_no": {"$regex": search, "$options": "i"}},
                 {"transaction_id": {"$regex": search, "$options": "i"}}
             ]
-        records = list(db.vargani_records.find(query).sort("created_at", -1))
-        for r in records:
+        m_recs = list(db.vargani_records.find(query).sort("created_at", -1))
+        for r in m_recs:
             r["_id"] = str(r["_id"])
             if isinstance(r.get("created_at"), datetime.datetime):
                 r["created_at_str"] = r["created_at"].strftime("%d-%m-%Y %I:%M %p")
-            else:
-                r["created_at_str"] = ""
-        return records
+            records.append(r)
+        if records:
+            return records
     except Exception as e:
-        print(f"MongoDB read error: {e}")
-        return []
+        print(f"MongoDB read all vargani fail: {e}")
 
-def get_vargani_by_id(record_id):
-    try:
-        db = get_db()
-        r = db.vargani_records.find_one({"_id": ObjectId(record_id)})
-        if r:
-            r["_id"] = str(r["_id"])
-            r["created_at_str"] = r["created_at"].strftime("%d-%m-%Y %I:%M %p") if isinstance(r.get("created_at"), datetime.datetime) else ""
-        return r
-    except Exception:
-        return None
+    local_data = load_json_data()
+    records = local_data.get("vargani_records", [])
+    if status and status != "All":
+        records = [r for r in records if r.get("status") == status]
+    if search:
+        s = search.lower()
+        records = [r for r in records if s in r.get("name", "").lower() or s in r.get("mobile", "").lower() or s in r.get("receipt_no", "").lower()]
+    return records
 
 def get_vargani_by_receipt_no(receipt_no):
-    try:
-        db = get_db()
-        r = db.vargani_records.find_one({"receipt_no": receipt_no})
-        if r:
-            r["_id"] = str(r["_id"])
-            r["created_at_str"] = r["created_at"].strftime("%d-%m-%Y %I:%M %p") if isinstance(r.get("created_at"), datetime.datetime) else ""
-        return r
-    except Exception:
-        return None
+    records = get_all_vargani()
+    for r in records:
+        if r.get("receipt_no") == receipt_no:
+            return r
+    return None
 
 def verify_vargani(record_id):
     try:
         db = get_db()
-        r = db.vargani_records.find_one({"_id": ObjectId(record_id)})
-        if r:
-            db.vargani_records.update_one(
-                {"_id": ObjectId(record_id)},
-                {"$set": {"status": "Verified", "verified_at": datetime.datetime.now()}}
-            )
-            r["status"] = "Verified"
-            return r
+        if len(record_id) == 24:
+            db.vargani_records.update_one({"_id": ObjectId(record_id)}, {"$set": {"status": "Verified"}})
+        else:
+            db.vargani_records.update_one({"_id": record_id}, {"$set": {"status": "Verified"}})
     except Exception as e:
-        print(f"Verify error: {e}")
-    return None
+        print(f"MongoDB verify error: {e}")
+
+    local_data = load_json_data()
+    recs = local_data.get("vargani_records", [])
+    updated_rec = None
+    for r in recs:
+        if str(r.get("_id")) == str(record_id) or r.get("receipt_no") == record_id:
+            r["status"] = "Verified"
+            updated_rec = r
+            break
+    save_json_data(local_data)
+    
+    if not updated_rec:
+        updated_rec = get_vargani_by_receipt_no(record_id)
+        if updated_rec:
+            updated_rec["status"] = "Verified"
+    return updated_rec
 
 def delete_vargani(record_id):
     try:
         db = get_db()
-        db.vargani_records.delete_one({"_id": ObjectId(record_id)})
-        return True
-    except Exception:
-        return False
+        if len(record_id) == 24:
+            db.vargani_records.delete_one({"_id": ObjectId(record_id)})
+        else:
+            db.vargani_records.delete_one({"_id": record_id})
+    except Exception as e:
+        print(f"MongoDB delete record error: {e}")
+
+    local_data = load_json_data()
+    recs = local_data.get("vargani_records", [])
+    new_recs = [r for r in recs if str(r.get("_id")) != str(record_id) and r.get("receipt_no") != record_id]
+    local_data["vargani_records"] = new_recs
+    save_json_data(local_data)
+    return True
 
 def get_stats():
-    try:
-        db = get_db()
-        records = list(db.vargani_records.find({}))
-        total_collected = sum(r.get("amount", 0) for r in records if r.get("status") == "Verified")
-        pending_amount = sum(r.get("amount", 0) for r in records if r.get("status") in ["Pending", "Pending Cash"])
-        total_donors = len(records)
-        verified_count = len([r for r in records if r.get("status") == "Verified"])
-        pending_count = len([r for r in records if r.get("status") in ["Pending", "Pending Cash"]])
-        cash_pending_count = len([r for r in records if r.get("status") == "Pending Cash"])
-        return {
-            "total_collected": total_collected,
-            "pending_amount": pending_amount,
-            "total_donors": total_donors,
-            "verified_count": verified_count,
-            "pending_count": pending_count,
-            "cash_pending_count": cash_pending_count
-        }
-    except Exception:
-        return {
-            "total_collected": 0,
-            "pending_amount": 0,
-            "total_donors": 0,
-            "verified_count": 0,
-            "pending_count": 0,
-            "cash_pending_count": 0
-        }
+    records = get_all_vargani()
+    total_collected = sum(int(r.get("amount", 0)) for r in records if r.get("status") == "Verified")
+    pending_amount = sum(int(r.get("amount", 0)) for r in records if r.get("status") in ["Pending", "Pending Cash"])
+    total_donors = len(records)
+    verified_count = len([r for r in records if r.get("status") == "Verified"])
+    pending_count = len([r for r in records if r.get("status") in ["Pending", "Pending Cash"]])
+    cash_pending_count = len([r for r in records if r.get("status") == "Pending Cash"])
+    return {
+        "total_collected": total_collected,
+        "pending_amount": pending_amount,
+        "total_donors": total_donors,
+        "verified_count": verified_count,
+        "pending_count": pending_count,
+        "cash_pending_count": cash_pending_count
+    }
 
 def get_gallery():
     try:
         db = get_db()
-        items = list(db.gallery.find({}).sort("created_at", -1))
+        items = list(db.gallery.find({}))
+        items.sort(key=lambda x: x.get("created_at", ""), reverse=True)
         for item in items:
             item["_id"] = str(item["_id"])
         return items
-    except Exception:
-        return SAMPLE_GALLERY
+    except Exception as e:
+        print(f"MongoDB get_gallery info: {e}")
+    
+    local_data = load_json_data()
+    return local_data.get("gallery", [])
 
-def add_gallery_item(title, image_url, media_type="photo", year="2025"):
+def add_gallery_item(title, image_url, media_type="photo", year="2026"):
+    item_id = f"item_{int(datetime.datetime.now().timestamp())}"
     item = {
+        "_id": item_id,
         "title": title.strip(),
         "image_url": image_url.strip(),
         "type": media_type,
         "year": year,
-        "created_at": datetime.datetime.now()
+        "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
+
     try:
         db = get_db()
-        res = db.gallery.insert_one(item)
+        db_item = item.copy()
+        db_item["_id"] = ObjectId()
+        res = db.gallery.insert_one(db_item)
         item["_id"] = str(res.inserted_id)
-    except Exception:
-        item["_id"] = "sample_id"
+    except Exception as e:
+        print(f"MongoDB add_gallery_item error: {e}")
+
+    local_data = load_json_data()
+    gallery = local_data.get("gallery", [])
+    gallery.insert(0, item)
+    local_data["gallery"] = gallery
+    save_json_data(local_data)
+
     return item
 
 def delete_gallery_item(item_id):
     try:
         db = get_db()
-        db.gallery.delete_one({"_id": ObjectId(item_id)})
-        return True
-    except Exception:
-        return False
+        if len(item_id) == 24:
+            try:
+                db.gallery.delete_one({"_id": ObjectId(item_id)})
+            except Exception:
+                pass
+        db.gallery.delete_one({"_id": item_id})
+    except Exception as e:
+        print(f"MongoDB delete_gallery_item error: {e}")
+
+    local_data = load_json_data()
+    gallery = local_data.get("gallery", [])
+    new_gallery = [g for g in gallery if str(g.get("_id")) != str(item_id)]
+    local_data["gallery"] = new_gallery
+    save_json_data(local_data)
+    return True
 
 def get_settings():
     try:
@@ -258,8 +315,13 @@ def get_settings():
                 settings["qr_code_url"] = "/static/images/default_qr.png"
             return settings
     except Exception as e:
-        print(f"MongoDB settings read error: {e}")
-    return DEFAULT_SETTINGS.copy()
+        print(f"MongoDB get_settings error: {e}")
+
+    local_data = load_json_data()
+    st = local_data.get("settings", DEFAULT_SETTINGS.copy())
+    if "entrance_photo_url" not in st or not st["entrance_photo_url"] or "photo-1567157577867" in st.get("entrance_photo_url", ""):
+        st["entrance_photo_url"] = "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=1200&q=80"
+    return st
 
 def update_settings(data):
     try:
@@ -267,5 +329,13 @@ def update_settings(data):
         data["updated_at"] = datetime.datetime.now()
         db.settings.update_one({}, {"$set": data}, upsert=True)
     except Exception as e:
-        print(f"MongoDB settings update error: {e}")
+        print(f"MongoDB update_settings error: {e}")
+
+    local_data = load_json_data()
+    st = local_data.get("settings", DEFAULT_SETTINGS.copy())
+    st.update(data)
+    st["updated_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    local_data["settings"] = st
+    save_json_data(local_data)
+
     return get_settings()

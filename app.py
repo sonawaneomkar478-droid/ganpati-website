@@ -5,6 +5,8 @@ import urllib.parse
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
+import re
+import mimetypes
 import db
 
 app = Flask(__name__)
@@ -26,6 +28,49 @@ except Exception as e:
     print(f"MongoDB Init Error: {e}")
 
 ADMIN_MOBILE = "7756806580"
+
+@app.route('/static/uploads/<path:filename>')
+def serve_upload(filename):
+    path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if not os.path.exists(path):
+        return "File not found", 404
+
+    file_size = os.path.getsize(path)
+    range_header = request.headers.get('Range', None)
+
+    if not range_header:
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+    byte1, byte2 = 0, None
+    m = re.search(r'bytes=(\d+)-(\d+)?', range_header)
+    if m:
+        g = m.groups()
+        if g[0]:
+            byte1 = int(g[0])
+        if g[1]:
+            byte2 = int(g[1])
+
+    if byte2 is None:
+        byte2 = file_size - 1
+
+    length = byte2 - byte1 + 1
+
+    with open(path, 'rb') as f:
+        f.seek(byte1)
+        data = f.read(length)
+
+    mime_type = mimetypes.guess_type(path)[0] or 'application/octet-stream'
+    response = Flask.response_class(
+        data,
+        206,
+        mimetype=mime_type,
+        direct_passthrough=True
+    )
+    response.headers.add('Content-Range', f'bytes {byte1}-{byte2}/{file_size}')
+    response.headers.add('Accept-Ranges', 'bytes')
+    response.headers.add('Content-Length', str(length))
+    response.headers.add('Cache-Control', 'public, max-age=31536000')
+    return response
 
 @app.after_request
 def add_header(response):
@@ -224,11 +269,16 @@ def upload_gallery():
         if 'video_file' in request.files and request.files['video_file'].filename:
             file = request.files['video_file']
             if file and allowed_file(file.filename):
-                filename = f"vid_{int(datetime.datetime.now().timestamp())}_{secure_filename(file.filename)}"
+                ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'mp4'
+                raw_name = file.filename.rsplit('.', 1)[0]
+                safe_name = secure_filename(raw_name)
+                if not safe_name:
+                    safe_name = "video"
+                filename = f"vid_{int(datetime.datetime.now().timestamp())}_{safe_name}.{ext}"
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 file.save(filepath)
                 
-                # Direct static URL for fast streaming playback in HTML5 video
+                # Direct static URL for fast HTTP 206 Range streaming playback in HTML5 video
                 image_url = f"/static/uploads/{filename}"
                 media_type = "video"
 

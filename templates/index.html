@@ -44,7 +44,9 @@
                     {% else %}
                         <!-- Clean Native Video Player with Full Controls at Bottom -->
                         <div style="position:relative; width:100%; height:100%; background: #000;">
-                            <video id="slide_vid_{{ loop.index }}" src="{{ item.image_url }}" controls playsinline preload="metadata" class="slide-video-player" style="width:100%; height:100%; object-fit:contain; position:relative; z-index:5; pointer-events:auto;"></video>
+                            <video id="slide_vid_{{ loop.index }}" controls playsinline preload="metadata" class="slide-video-player" style="width:100%; height:100%; object-fit:contain; position:relative; z-index:5; pointer-events:auto;">
+                                <source src="{{ item.image_url }}" type="video/mp4">
+                            </video>
                         </div>
                     {% endif %}
                 {% else %}
@@ -268,10 +270,18 @@
 
             const currentVid = activeSlide.querySelector('video');
             if (currentVid) {
-                // For Video slide: play video and auto-advance ONLY after video ends!
-                currentVid.play().catch(e => console.log('Autoplay handled:', e));
+                // For Video slide: mute for smooth browser autoplay, then auto-advance after video ends
+                currentVid.muted = true;
+                const playPromise = currentVid.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(e => console.log('Autoplay handled:', e));
+                }
                 currentVid.onended = function() {
                     moveSlide(1);
+                };
+                currentVid.onerror = function() {
+                    console.log('Video error, moving to next slide');
+                    slideTimer = setTimeout(() => moveSlide(1), 3000);
                 };
             } else {
                 // For Photo slide: wait 6 seconds then auto-advance to next slide

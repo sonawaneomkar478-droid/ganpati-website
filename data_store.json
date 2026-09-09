@@ -1,0 +1,20 @@
+{
+  "settings": {
+    "mandal_name": "श्री गणेशोत्सव मित्र मंडळ, पुणे",
+    "tagline": "वर्गणी संकलन व ऑनलाईन डिजिटल पावती प्रणाली २०२६",
+    "entrance_shloka": "🚩 ॐ गं गणपतये नमः 🚩",
+    "entrance_photo_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=1200&q=80",
+    "upi_id": "mandalganpati@upi",
+    "receiver_name": "Shri Ganeshotsav Mandal",
+    "phone_number": "7756806580",
+    "admin_mobile": "7756806580",
+    "contact_name2": "वर्गणी व पावती प्रमुख",
+    "contact_phone2": "9876543210",
+    "contact_name3": "खजिनदार (Treasurer)",
+    "contact_phone3": "9822114455",
+    "qr_code_url": "/static/images/default_qr.png",
+    "address": "गणेश चौक, मुख्य रस्ता, पुणे"
+  },
+  "gallery": [],
+  "vargani_records": []
+}
