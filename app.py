@@ -381,20 +381,23 @@ def list_vargani():
     return jsonify({'success': True, 'records': records})
 
 @app.route('/ping')
+@app.route('/health')
 def ping():
-    return "PONG", 200
+    resp = make_response("PONG", 200)
+    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return resp
 
 import threading
 import urllib.request
 
 def keep_alive():
-    time.sleep(10)
+    time.sleep(5)
     while True:
         try:
             urllib.request.urlopen("https://ganpati-website.onrender.com/ping", timeout=5)
         except Exception:
             pass
-        time.sleep(600)
+        time.sleep(180)
 
 keep_alive_thread = threading.Thread(target=keep_alive, daemon=True)
 keep_alive_thread.start()
