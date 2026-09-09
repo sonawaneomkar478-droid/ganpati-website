@@ -42,6 +42,29 @@ DEFAULT_GALLERY = [
     }
 ]
 
+import threading
+import subprocess
+
+_sync_lock = threading.Lock()
+
+def _bg_github_sync():
+    if not _sync_lock.acquire(blocking=False):
+        return
+    try:
+        subprocess.run(["git", "add", DATA_FILE], capture_output=True)
+        res = subprocess.run(["git", "commit", "-m", "Auto-sync persistent data_store.json updates"], capture_output=True, text=True)
+        if "nothing to commit" not in res.stdout and "no changes added" not in res.stdout:
+            subprocess.run(["git", "push", "origin", "main"], capture_output=True)
+            print("✅ Auto-synced data_store.json to GitHub repository!")
+    except Exception as e:
+        print(f"Git auto-sync info: {e}")
+    finally:
+        _sync_lock.release()
+
+def trigger_github_sync():
+    t = threading.Thread(target=_bg_github_sync, daemon=True)
+    t.start()
+
 def load_json_data():
     if os.path.exists(DATA_FILE):
         try:
@@ -64,6 +87,7 @@ def save_json_data(data):
     try:
         with open(DATA_FILE, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2, default=str)
+        trigger_github_sync()
     except Exception as e:
         print(f"Error saving data_store.json: {e}")
 

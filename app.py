@@ -268,21 +268,16 @@ def upload_gallery():
         image_url = ""
         media_type = "photo"
 
-        # Case 1: Video file uploaded from local folder / phone
+        # Case 1: Video file uploaded from local folder / phone (Base64 Encoded for Permanent Persistence)
         if 'video_file' in request.files and request.files['video_file'].filename:
             file = request.files['video_file']
             if file and allowed_file(file.filename):
-                ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'mp4'
-                raw_name = file.filename.rsplit('.', 1)[0]
-                safe_name = secure_filename(raw_name)
-                if not safe_name:
-                    safe_name = "video"
-                filename = f"vid_{int(datetime.datetime.now().timestamp())}_{safe_name}.{ext}"
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(filepath)
-                
-                # Direct static URL for fast HTTP 206 Range streaming playback in HTML5 video
-                image_url = f"/static/uploads/{filename}"
+                mime_type = file.mimetype or "video/mp4"
+                file_bytes = file.read()
+                if len(file_bytes) > 35 * 1024 * 1024:
+                    return jsonify({'success': False, 'message': '⚠️ व्हिडिओ फाईलची साईझ ३५MB पेक्षा जास्त असू नये.'}), 400
+                encoded = base64.b64encode(file_bytes).decode('utf-8')
+                image_url = f"data:{mime_type};base64,{encoded}"
                 media_type = "video"
 
         # Case 2: Photo file uploaded from local folder / phone
