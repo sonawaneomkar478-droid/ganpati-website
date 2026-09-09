@@ -383,9 +383,7 @@ def list_vargani():
 @app.route('/ping')
 @app.route('/health')
 def ping():
-    resp = make_response("PONG", 200)
-    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    return resp
+    return "PONG", 200, {'Cache-Control': 'no-cache, no-store, must-revalidate'}
 
 import threading
 import urllib.request
