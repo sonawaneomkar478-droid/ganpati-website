@@ -635,8 +635,17 @@
             }
         }
 
-        // 1-Click Image Receipt Generator & WhatsApp Sharer Function
+        // 1-Click Image Receipt Generator & Instant WhatsApp Sharer Function
         function generateAndSendImage(receiptNo, name, mobile, amount, dateStr, paymentMode) {
+            // 1. Prepare WhatsApp URL & open window synchronously to bypass pop-up blockers
+            const mandalName = "{{ settings.mandal_name or 'श्री गणेशोत्सव मित्र मंडळ' }}";
+            const waText = `🚩 ${mandalName} 🚩\n\nनमस्कार ${name},\nआपली ₹${amount} वर्गणी जमा झाली असून मंडळाकडून पावती मंजूर करण्यात आली आहे!\n\nपावती क्रमांक: ${receiptNo}\n(टीप: डाउनलोड झालेला पावतीचा फोटो सोबत जोडला आहे)\n\nमंडळाकडून आपले मनःपूर्वक आभार!\nगणपती बाप्पा मोरया! 🚩`;
+            const encoded = encodeURIComponent(waText);
+            const waUrl = `https://api.whatsapp.com/send?phone=91${mobile}&text=${encoded}`;
+
+            const waWindow = window.open('about:blank', '_blank');
+
+            // 2. Populate Receipt Template Values
             document.getElementById('pdfReceiptNo').innerText = receiptNo;
             document.getElementById('pdfName').innerText = name;
             document.getElementById('pdfMobile').innerText = mobile;
@@ -647,7 +656,6 @@
             const wrapper = document.getElementById('pdfRenderWrapper');
             const element = document.getElementById('pdfContainer');
             
-            // Show offscreen/modal wrapper briefly for html2canvas
             if (wrapper) wrapper.style.display = 'flex';
 
             setTimeout(() => {
@@ -661,6 +669,7 @@
                 }).then(canvas => {
                     if (wrapper) wrapper.style.display = 'none';
 
+                    // Trigger PNG Image Download
                     const image = canvas.toDataURL('image/png');
                     const link = document.createElement('a');
                     link.download = `Ganpati_Vargani_Receipt_${receiptNo}.png`;
@@ -669,14 +678,15 @@
                     link.click();
                     document.body.removeChild(link);
 
-                    alert(`✅ पावतीची फोटो फाईल (Ganpati_Vargani_Receipt_${receiptNo}.png) डाऊनलोड झाली आहे!\n\nआता WhatsApp उघडत आहे. WhatsApp मध्ये अटॅचमेंट (📎 -> Photo/Gallery) आयकॉनवर क्लिक करून डाऊनलोड झालेला पावतीचा फोटो पाठवा.`);
-                    
-                    const mandalName = "{{ settings.mandal_name or 'श्री गणेशोत्सव मित्र मंडळ' }}";
-                    const waText = `🚩 ${mandalName} 🚩\n\nनमस्कार ${name},\nआपली ₹${amount} वर्गणी जमा झाली असून मंडळाकडून पावती मंजूर करण्यात आली आहे!\n\nपावती क्रमांक: ${receiptNo}\n(टीप: डाऊनलोड झालेला पावतीचा फोटो सोबत जोडला आहे)\n\nमंडळाकडून आपले मनःपूर्वक आभार!\nगणपती बाप्पा मोरया! 🚩`;
-                    const encoded = encodeURIComponent(waText);
-                    window.open(`https://api.whatsapp.com/send?phone=91${mobile}&text=${encoded}`, '_blank');
+                    // Instantly open WhatsApp
+                    if (waWindow && !waWindow.closed) {
+                        waWindow.location.href = waUrl;
+                    } else {
+                        window.location.href = waUrl;
+                    }
                 }).catch(e => {
                     if (wrapper) wrapper.style.display = 'none';
+                    if (waWindow && !waWindow.closed) waWindow.close();
                     console.error('Image generation error:', e);
                     alert('❌ पावतीचा फोटो बनवण्यात अडचण आली. कृपया पुन्हा प्रयत्न करा.');
                 });
