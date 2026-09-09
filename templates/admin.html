@@ -392,8 +392,8 @@
                 
                 <div style="text-align: center; margin-bottom: 1rem; background: #f0fdf4; border: 1.5px dashed #22c55e; padding: 1rem; border-radius: 14px;">
                     <span style="font-size: 2rem;">📢</span>
-                    <h2 style="font-family: 'Khand', sans-serif; font-size: 1.6rem; color: #15803d; margin-top: 2px;">आरती निमंत्रण WhatsApp ब्रॉडकास्ट</h2>
-                    <p style="font-size: 0.85rem; color: #475569;">लॉगिन केलेल्या व वर्गणी भरलेल्या सर्व भाविकांना एका क्लिकवर आरतीचा मेसेज पाठवा</p>
+                    <h2 style="font-family: 'Khand', sans-serif; font-size: 1.6rem; color: #15803d; margin-top: 2px;">आरती निमंत्रण WhatsApp एक्सप्रेस</h2>
+                    <p style="font-size: 0.85rem; color: #475569;">लॉगिन केलेल्या व वर्गणी भरलेल्या सर्व भाविकांना सोप्या पद्धतीने आरतीचा मेसेज पाठवा</p>
                     <div style="display: inline-block; background: #dcfce7; color: #166534; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.88rem; margin-top: 6px;">
                         📲 एकूण नोंदणीकृत भाविक: {{ registered_users|length }} जण
                     </div>
@@ -402,7 +402,7 @@
                 <!-- Aarti Message Composer -->
                 <div class="input-group">
                     <label for="broadcastMsg" class="input-label" style="color: #166534; font-weight: 700;">
-                        📝 आरती निमंत्रण मेसेज (Broadcast Message Text):
+                        📝 आरती निमंत्रण मेसेज (Message Text):
                     </label>
                     <textarea id="broadcastMsg" class="nova-input" rows="5" style="font-size: 0.92rem; line-height: 1.4;">🚩 {{ settings.mandal_name }} 🚩
 
@@ -415,14 +415,23 @@
 गणपती बाप्पा मोरया! 🚩</textarea>
                 </div>
 
-                <!-- Broadcast Actions -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 1rem;">
-                    <button onclick="sendBroadcastToAll()" class="btn-nova-submit" style="background: linear-gradient(135deg, #25d366, #128c7e); font-size: 1.05rem;">
-                        📲 १-क्लिक मध्ये सर्व भाविकांना WhatsApp पाठवा
-                    </button>
+                <!-- Express Broadcast Queue Start Button -->
+                <button onclick="startExpressBroadcast()" class="btn-nova-submit" style="background: linear-gradient(135deg, #25d366, #128c7e); font-size: 1.1rem; padding: 1rem; margin-top: 0.5rem;">
+                    🚀 आरती निमंत्रण पाठवायला सुरुवात करा (Start WhatsApp Queue)
+                </button>
 
-                    <button onclick="copyAllNumbers()" class="btn-nova-submit" style="background: linear-gradient(135deg, #0284c7, #0369a1); font-size: 1.05rem;">
-                        📋 सर्व मोबाईल नंबर कॉपी करा (Group साठी)
+                <!-- Dynamic Express Queue Progress Box -->
+                <div id="broadcastProgressContainer" style="display: none; margin-top: 1.2rem; background: #f0fdf4; border: 1.5px solid #86efac; padding: 1.2rem; border-radius: 14px; text-align: center;">
+                    <strong style="color: #166534; font-size: 0.95rem; display: block; margin-bottom: 6px;" id="broadcastCurrentStatus">
+                        भाविक १ / {{ registered_users|length }}: ...
+                    </strong>
+
+                    <div style="width: 100%; height: 16px; background: #cbd5e1; border-radius: 10px; overflow: hidden; margin-bottom: 12px;">
+                        <div id="broadcastProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #25d366, #059669); transition: width 0.2s ease;"></div>
+                    </div>
+
+                    <button id="nextUserBtn" onclick="sendNextBroadcastUser()" class="btn-nova-submit" style="background: linear-gradient(135deg, #d84315, #b71c1c); width: auto; padding: 8px 24px; font-size: 1rem; display: inline-block;">
+                        ➔ पुढचा भाविक पाठवा (Next Person)
                     </button>
                 </div>
 
@@ -570,52 +579,60 @@
             }
         }
 
-        // WhatsApp Broadcast Helper Functions
+        // WhatsApp Express Queue Broadcast Helper Functions
+        let broadcastUsers = [
+            {% for u in registered_users %}
+                { name: "{{ u.name }}", mobile: "{{ u.mobile }}" },
+            {% endfor %}
+        ];
+        let currentBroadcastIdx = 0;
+
         function sendSingleWAMsg(mobile) {
             const msg = document.getElementById('broadcastMsg').value;
             const encoded = encodeURIComponent(msg);
             window.open(`https://api.whatsapp.com/send?phone=91${mobile}&text=${encoded}`, '_blank');
         }
 
-        function sendBroadcastToAll() {
-            const users = [
-                {% for u in registered_users %}
-                    "{{ u.mobile }}",
-                {% endfor %}
-            ];
-            if (users.length === 0) {
+        function startExpressBroadcast() {
+            if (broadcastUsers.length === 0) {
                 alert('⚠️ एकही नोंदणीकृत मोबाईल नंबर सापडला नाही.');
                 return;
             }
-            
-            const msg = document.getElementById('broadcastMsg').value;
-            const encoded = encodeURIComponent(msg);
-
-            alert(`✅ एकूण ${users.length} नोंदणीकृत भाविकांना आरती निमंत्रण मेसेज पाठवला जात आहे! पहिल्या नंबरसाठी WhatsApp उघडत आहे...`);
-            
-            let delay = 0;
-            users.forEach((mobile) => {
-                setTimeout(() => {
-                    window.open(`https://api.whatsapp.com/send?phone=91${mobile}&text=${encoded}`, '_blank');
-                }, delay);
-                delay += 1200;
-            });
+            currentBroadcastIdx = 0;
+            const box = document.getElementById('broadcastProgressContainer');
+            if (box) box.style.display = 'block';
+            sendNextBroadcastUser();
         }
 
-        function copyAllNumbers() {
-            const users = [
-                {% for u in registered_users %}
-                    "{{ u.mobile }}",
-                {% endfor %}
-            ];
-            if (users.length === 0) {
-                alert('⚠️ एकही मोबाईल नंबर उपलब्ध नाही.');
+        function sendNextBroadcastUser() {
+            if (currentBroadcastIdx >= broadcastUsers.length) {
+                alert('🎉 सर्व भाविकांना आरती निमंत्रण मेसेज पाठवून पूर्ण झाले आहे!');
+                const box = document.getElementById('broadcastProgressContainer');
+                if (box) box.style.display = 'none';
                 return;
             }
-            const text = users.join(', ');
-            navigator.clipboard.writeText(text).then(() => {
-                alert(`📋 एकूण ${users.length} मोबाईल नंबर क्लिपबोर्डवर कॉपी झाले! तुम्ही आता WhatsApp ग्रुप किंवा ब्रॉडकास्ट लिस्टमध्ये पेस्ट करू शकता.`);
-            });
+
+            const u = broadcastUsers[currentBroadcastIdx];
+            const statusEl = document.getElementById('broadcastCurrentStatus');
+            const barEl = document.getElementById('broadcastProgressBar');
+            const btnEl = document.getElementById('nextUserBtn');
+
+            if (statusEl) statusEl.innerText = `भाविक ${currentBroadcastIdx + 1} / ${broadcastUsers.length}: ${u.name} (📱 ${u.mobile})`;
+            const percent = Math.round(((currentBroadcastIdx + 1) / broadcastUsers.length) * 100);
+            if (barEl) barEl.style.width = percent + '%';
+
+            const msg = document.getElementById('broadcastMsg').value;
+            const encoded = encodeURIComponent(msg);
+            window.open(`https://api.whatsapp.com/send?phone=91${u.mobile}&text=${encoded}`, '_blank');
+
+            currentBroadcastIdx++;
+            if (btnEl) {
+                if (currentBroadcastIdx < broadcastUsers.length) {
+                    btnEl.innerText = `➔ पुढचा भाविक पाठवा (${currentBroadcastIdx + 1}/${broadcastUsers.length})`;
+                } else {
+                    btnEl.innerText = `✅ पूर्ण झाले! (Done)`;
+                }
+            }
         }
     </script>
 </body>
