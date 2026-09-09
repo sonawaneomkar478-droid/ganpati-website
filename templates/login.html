@@ -10,14 +10,16 @@
         /* Divine Background Mandap */
         .divine-background {
             min-height: 100vh;
+            min-height: 100dvh;
             width: 100%;
             position: relative;
-            overflow: hidden;
+            overflow-x: hidden;
             background: radial-gradient(circle at center, #8b0000 0%, #4a0000 60%, #1a0000 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 1.2rem;
+            padding: 1.5rem 0.9rem;
+            perspective: 1000px;
         }
 
         {% if settings.entrance_photo_url %}
@@ -70,18 +72,19 @@
 
         /* Animated Temple Diya / Lamp Flames */
         .diya-container {
-            position: absolute;
-            bottom: 25px;
+            position: fixed;
+            bottom: 20px;
             width: 100%;
+            max-width: 600px;
             display: flex;
             justify-content: space-between;
-            padding: 0 6%;
+            padding: 0 5%;
             z-index: 4;
             pointer-events: none;
         }
 
         .diya {
-            font-size: 3.2rem;
+            font-size: 3rem;
             filter: drop-shadow(0 0 18px #ffb703);
             animation: diyaFlicker 1.5s ease-in-out infinite alternate;
         }
@@ -96,15 +99,16 @@
             position: relative;
             z-index: 10;
             width: 100%;
-            max-width: 450px;
-            background: rgba(255, 255, 255, 0.95);
+            max-width: 440px;
+            margin: auto 0;
+            background: rgba(255, 255, 255, 0.96);
             backdrop-filter: blur(25px);
             -webkit-backdrop-filter: blur(25px);
             border-radius: 28px;
-            border: 4px double #ffb703;
+            border: 3.5px double #ffb703;
             box-shadow: 
-                0 0 40px rgba(255, 183, 3, 0.6),
-                0 25px 60px rgba(0, 0, 0, 0.85);
+                0 0 45px rgba(255, 183, 3, 0.55),
+                0 25px 65px rgba(0, 0, 0, 0.85);
             padding: 2.2rem 1.8rem;
             text-align: center;
             animation: windowAppear 0.8s cubic-bezier(0.16, 1, 0.3, 1);
@@ -206,16 +210,16 @@
                 🐘
             </div>
 
-            <div style="font-size: 0.9rem; color: #ffb703; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px;">
+            <div style="font-size: 0.9rem; color: #d84315; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px;">
                 {{ settings.entrance_shloka or '🚩 ॐ गं गणपतये नमः 🚩' }}
             </div>
 
             <h1 class="divine-title">
-                {{ settings.mandal_name }}
+                {{ settings.mandal_name or 'श्री गणेशोत्सव मित्र मंडळ, पुणे' }}
             </h1>
             
             <p class="divine-subtitle">
-                {{ settings.tagline }}
+                {{ settings.tagline or 'वर्गणी संकलन व ऑनलाईन डिजिटल पावती प्रणाली २०२६' }}
             </p>
 
             {% if error %}
@@ -274,7 +278,7 @@
             }
         }
 
-        // Falling Flower Petals Canvas Effect
+        // Falling Flower Petals & Golden Sparkles Canvas Effect
         const canvas = document.getElementById('flowerCanvas');
         const ctx = canvas.getContext('2d');
 
@@ -286,9 +290,10 @@
         window.addEventListener('resize', resizeCanvas);
 
         const petals = [];
-        const petalColors = ['#ff4500', '#ffb703', '#d84315', '#ff7844', '#ffffff'];
+        const sparkles = [];
+        const petalColors = ['#ff4500', '#ffb703', '#d84315', '#ff7844', '#ffffff', '#ffd700'];
 
-        for (let i = 0; i < 40; i++) {
+        for (let i = 0; i < 45; i++) {
             petals.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
@@ -300,8 +305,33 @@
             });
         }
 
-        function drawPetals() {
+        // Magic Golden Touch Sparkle Trail
+        function addSparkle(x, y) {
+            for (let i = 0; i < 5; i++) {
+                sparkles.push({
+                    x: x + (Math.random() * 20 - 10),
+                    y: y + (Math.random() * 20 - 10),
+                    size: Math.random() * 6 + 2,
+                    color: petalColors[Math.floor(Math.random() * petalColors.length)],
+                    life: 1.0,
+                    decay: Math.random() * 0.03 + 0.02,
+                    speedX: Math.random() * 2 - 1,
+                    speedY: Math.random() * -2 - 0.5
+                });
+            }
+        }
+
+        window.addEventListener('mousemove', (e) => addSparkle(e.clientX, e.clientY));
+        window.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 0) {
+                addSparkle(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: true });
+
+        function drawScene() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Petals
             petals.forEach(p => {
                 ctx.save();
                 ctx.translate(p.x, p.y);
@@ -321,9 +351,32 @@
                     p.x = Math.random() * canvas.width;
                 }
             });
-            requestAnimationFrame(drawPetals);
+
+            // Draw Magic Touch Sparkles
+            for (let i = sparkles.length - 1; i >= 0; i--) {
+                const s = sparkles[i];
+                ctx.save();
+                ctx.globalAlpha = s.life;
+                ctx.fillStyle = s.color;
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = '#ffb703';
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+
+                s.x += s.speedX;
+                s.y += s.speedY;
+                s.life -= s.decay;
+
+                if (s.life <= 0) {
+                    sparkles.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(drawScene);
         }
-        drawPetals();
+        drawScene();
     </script>
 </body>
 </html>

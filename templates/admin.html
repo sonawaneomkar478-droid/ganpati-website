@@ -59,6 +59,9 @@
             <button class="tab-btn" data-tab="settingsTab">
                 ⚙️ ५. QR Code व बँक सेटिंग्ज
             </button>
+            <button class="tab-btn" data-tab="broadcastTab" style="background: #25d366; color: #fff; border-color: #16a34a;">
+                📢 ६. आरती निमंत्रण WhatsApp
+            </button>
         </div>
 
         <!-- TAB 1: LIST & VERIFICATION WITH WHATSAPP RECEIPT -->
@@ -383,6 +386,83 @@
             </div>
         </div>
 
+        <!-- TAB 6: WHATSAPP AARTI BROADCAST & REGISTERED USERS -->
+        <div id="broadcastTab" class="tab-content" style="display: none;">
+            <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                
+                <div style="text-align: center; margin-bottom: 1rem; background: #f0fdf4; border: 1.5px dashed #22c55e; padding: 1rem; border-radius: 14px;">
+                    <span style="font-size: 2rem;">📢</span>
+                    <h2 style="font-family: 'Khand', sans-serif; font-size: 1.6rem; color: #15803d; margin-top: 2px;">आरती निमंत्रण WhatsApp ब्रॉडकास्ट</h2>
+                    <p style="font-size: 0.85rem; color: #475569;">लॉगिन केलेल्या व वर्गणी भरलेल्या सर्व भाविकांना एका क्लिकवर आरतीचा मेसेज पाठवा</p>
+                    <div style="display: inline-block; background: #dcfce7; color: #166534; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.88rem; margin-top: 6px;">
+                        📲 एकूण नोंदणीकृत भाविक: {{ registered_users|length }} जण
+                    </div>
+                </div>
+
+                <!-- Aarti Message Composer -->
+                <div class="input-group">
+                    <label for="broadcastMsg" class="input-label" style="color: #166534; font-weight: 700;">
+                        📝 आरती निमंत्रण मेसेज (Broadcast Message Text):
+                    </label>
+                    <textarea id="broadcastMsg" class="nova-input" rows="5" style="font-size: 0.92rem; line-height: 1.4;">🚩 {{ settings.mandal_name }} 🚩
+
+नमस्कार,
+आज संध्याकाळी ७:०० वाजता मंडळाची महाआरती व महाप्रसाद आयोजित करण्यात आला आहे.
+
+तरी सर्व वर्गणीदार व भाविकांनी वेळेवर उपस्थित राहून श्रींच्या आरतीचा लाभ घ्यावा!
+
+पावती / पोर्टल: {{ request.host_url }}
+गणपती बाप्पा मोरया! 🚩</textarea>
+                </div>
+
+                <!-- Broadcast Actions -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 1rem;">
+                    <button onclick="sendBroadcastToAll()" class="btn-nova-submit" style="background: linear-gradient(135deg, #25d366, #128c7e); font-size: 1.05rem;">
+                        📲 १-क्लिक मध्ये सर्व भाविकांना WhatsApp पाठवा
+                    </button>
+
+                    <button onclick="copyAllNumbers()" class="btn-nova-submit" style="background: linear-gradient(135deg, #0284c7, #0369a1); font-size: 1.05rem;">
+                        📋 सर्व मोबाईल नंबर कॉपी करा (Group साठी)
+                    </button>
+                </div>
+
+                <!-- Registered Users List Table -->
+                <div style="margin-top: 1.5rem;">
+                    <h3 style="font-size: 1rem; font-weight: 700; color: #334155; margin-bottom: 0.8rem;">
+                        👥 नोंदणीकृत मोबाईल नंबर लिस्ट (Registered Users):
+                    </h3>
+
+                    <div class="admin-table-wrapper">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+                            <thead>
+                                <tr style="background: #f1f5f9; color: #475569;">
+                                    <th style="padding: 10px 8px;">अनु क्र.</th>
+                                    <th style="padding: 10px 8px;">नाव / प्रकार</th>
+                                    <th style="padding: 10px 8px;">मोबाईल नंबर</th>
+                                    <th style="padding: 10px 8px;">WhatsApp Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for u in registered_users %}
+                                <tr style="border-bottom: 1px solid #f1f5f9;">
+                                    <td style="padding: 8px;"><strong>{{ loop.index }}</strong></td>
+                                    <td style="padding: 8px;">{{ u.name }} <small style="color: #64748b;">({{ u.source }})</small></td>
+                                    <td style="padding: 8px;"><strong style="color: #1e293b;">📱 {{ u.mobile }}</strong></td>
+                                    <td style="padding: 8px;">
+                                        <button onclick="sendSingleWAMsg('{{ u.mobile }}')" class="btn-wa-action" style="padding: 4px 10px; font-size: 0.78rem;">
+                                            💬 आरती मेसेज पाठवा
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
     </main>
 
     <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
@@ -488,6 +568,54 @@
                 if (card) { card.style.opacity = '1'; card.style.pointerEvents = 'auto'; }
                 alert('❌ नेटवर्क एरर');
             }
+        }
+
+        // WhatsApp Broadcast Helper Functions
+        function sendSingleWAMsg(mobile) {
+            const msg = document.getElementById('broadcastMsg').value;
+            const encoded = encodeURIComponent(msg);
+            window.open(`https://api.whatsapp.com/send?phone=91${mobile}&text=${encoded}`, '_blank');
+        }
+
+        function sendBroadcastToAll() {
+            const users = [
+                {% for u in registered_users %}
+                    "{{ u.mobile }}",
+                {% endfor %}
+            ];
+            if (users.length === 0) {
+                alert('⚠️ एकही नोंदणीकृत मोबाईल नंबर सापडला नाही.');
+                return;
+            }
+            
+            const msg = document.getElementById('broadcastMsg').value;
+            const encoded = encodeURIComponent(msg);
+
+            alert(`✅ एकूण ${users.length} नोंदणीकृत भाविकांना आरती निमंत्रण मेसेज पाठवला जात आहे! पहिल्या नंबरसाठी WhatsApp उघडत आहे...`);
+            
+            let delay = 0;
+            users.forEach((mobile) => {
+                setTimeout(() => {
+                    window.open(`https://api.whatsapp.com/send?phone=91${mobile}&text=${encoded}`, '_blank');
+                }, delay);
+                delay += 1200;
+            });
+        }
+
+        function copyAllNumbers() {
+            const users = [
+                {% for u in registered_users %}
+                    "{{ u.mobile }}",
+                {% endfor %}
+            ];
+            if (users.length === 0) {
+                alert('⚠️ एकही मोबाईल नंबर उपलब्ध नाही.');
+                return;
+            }
+            const text = users.join(', ');
+            navigator.clipboard.writeText(text).then(() => {
+                alert(`📋 एकूण ${users.length} मोबाईल नंबर क्लिपबोर्डवर कॉपी झाले! तुम्ही आता WhatsApp ग्रुप किंवा ब्रॉडकास्ट लिस्टमध्ये पेस्ट करू शकता.`);
+            });
         }
     </script>
 </body>

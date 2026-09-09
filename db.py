@@ -304,11 +304,13 @@ def get_settings():
         settings = db.settings.find_one({})
         if settings:
             settings["_id"] = str(settings["_id"])
-            if "contact_name2" not in settings: settings["contact_name2"] = "वर्गणी व पावती प्रमुख"
-            if "contact_phone2" not in settings: settings["contact_phone2"] = "9876543210"
-            if "contact_name3" not in settings: settings["contact_name3"] = "खजिनदार (Treasurer)"
-            if "contact_phone3" not in settings: settings["contact_phone3"] = "9822114455"
-            if "entrance_shloka" not in settings: settings["entrance_shloka"] = "🚩 ॐ गं गणपतये नमः 🚩"
+            if not settings.get("mandal_name"): settings["mandal_name"] = DEFAULT_SETTINGS["mandal_name"]
+            if not settings.get("tagline"): settings["tagline"] = DEFAULT_SETTINGS["tagline"]
+            if not settings.get("contact_name2"): settings["contact_name2"] = "वर्गणी व पावती प्रमुख"
+            if not settings.get("contact_phone2"): settings["contact_phone2"] = "9876543210"
+            if not settings.get("contact_name3"): settings["contact_name3"] = "खजिनदार (Treasurer)"
+            if not settings.get("contact_phone3"): settings["contact_phone3"] = "9822114455"
+            if not settings.get("entrance_shloka"): settings["entrance_shloka"] = "🚩 ॐ गं गणपतये नमः 🚩"
             if "entrance_photo_url" not in settings or not settings["entrance_photo_url"] or "photo-1567157577867" in settings.get("entrance_photo_url", ""):
                 settings["entrance_photo_url"] = "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=1200&q=80"
             if "qr_code_url" not in settings or not settings["qr_code_url"]:
@@ -319,6 +321,8 @@ def get_settings():
 
     local_data = load_json_data()
     st = local_data.get("settings", DEFAULT_SETTINGS.copy())
+    if not st.get("mandal_name"): st["mandal_name"] = DEFAULT_SETTINGS["mandal_name"]
+    if not st.get("tagline"): st["tagline"] = DEFAULT_SETTINGS["tagline"]
     if "entrance_photo_url" not in st or not st["entrance_photo_url"] or "photo-1567157577867" in st.get("entrance_photo_url", ""):
         st["entrance_photo_url"] = "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=1200&q=80"
     return st
@@ -339,3 +343,64 @@ def update_settings(data):
     save_json_data(local_data)
 
     return get_settings()
+
+def register_user_login(mobile):
+    mobile = str(mobile).strip()
+    if not mobile or len(mobile) < 10:
+        return
+    now_str = datetime.datetime.now().strftime("%d-%m-%Y %I:%M %p")
+    user_entry = {
+        "mobile": mobile,
+        "last_login": now_str
+    }
+    
+    try:
+        db = get_db()
+        db.users.update_one({"mobile": mobile}, {"$set": user_entry}, upsert=True)
+    except Exception as e:
+        print(f"MongoDB user register info: {e}")
+
+    local_data = load_json_data()
+    users = local_data.get("users", [])
+    existing = False
+    for u in users:
+        if u.get("mobile") == mobile:
+            u["last_login"] = now_str
+            existing = True
+            break
+    if not existing:
+        users.append(user_entry)
+    local_data["users"] = users
+    save_json_data(local_data)
+
+def get_registered_users():
+    unique_users = {}
+    
+    # Collect numbers from vargani records
+    v_records = get_all_vargani()
+    for r in v_records:
+        m = r.get("mobile", "").strip()
+        if m and len(m) >= 10:
+            name = r.get("name", "वर्गणीदार")
+            unique_users[m] = {"mobile": m, "name": name, "source": "वर्गणीदार"}
+
+    try:
+        db = get_db()
+        db_users = list(db.users.find({}))
+        for u in db_users:
+            m = u.get("mobile", "").strip()
+            if m and len(m) >= 10:
+                if m not in unique_users:
+                    unique_users[m] = {"mobile": m, "name": u.get("name", "भाविक"), "source": "लॉगिन भाविक"}
+    except Exception as e:
+        print(f"MongoDB get_registered_users info: {e}")
+
+    local_data = load_json_data()
+    local_users = local_data.get("users", [])
+    for u in local_users:
+        m = u.get("mobile", "").strip()
+        if m and len(m) >= 10:
+            if m not in unique_users:
+                unique_users[m] = {"mobile": m, "name": u.get("name", "भाविक"), "source": "लॉगिन भाविक"}
+
+    return list(unique_users.values())

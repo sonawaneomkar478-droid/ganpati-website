@@ -88,6 +88,8 @@ def login():
             return render_template('login.html', settings=settings, error="कृपया वैध १० अंकी मोबाईल नंबर टाका.")
         
         session['user'] = mobile
+        db.register_user_login(mobile)
+
         if mobile == ADMIN_MOBILE:
             session['role'] = 'admin'
             return redirect(url_for('admin'))
@@ -124,7 +126,8 @@ def admin():
     stats = db.get_stats()
     records = db.get_all_vargani()
     gallery = db.get_gallery()
-    return render_template('admin.html', settings=settings, stats=stats, records=records, gallery=gallery, session=session)
+    registered_users = db.get_registered_users()
+    return render_template('admin.html', settings=settings, stats=stats, records=records, gallery=gallery, registered_users=registered_users, session=session)
 
 # RECEIPT PAGE
 @app.route('/receipt/<receipt_no>')
@@ -381,6 +384,25 @@ def list_vargani():
     search = request.args.get('search', '')
     records = db.get_all_vargani(status=status, search=search)
     return jsonify({'success': True, 'records': records})
+
+@app.route('/ping')
+def ping():
+    return "PONG", 200
+
+import threading
+import urllib.request
+
+def keep_alive():
+    time.sleep(10)
+    while True:
+        try:
+            urllib.request.urlopen("https://ganpati-website.onrender.com/ping", timeout=5)
+        except Exception:
+            pass
+        time.sleep(600)
+
+keep_alive_thread = threading.Thread(target=keep_alive, daemon=True)
+keep_alive_thread.start()
 
 if __name__ == '__main__':
     print("Starting Ganpati Vargani Portal with Local Video Upload on http://localhost:5000")

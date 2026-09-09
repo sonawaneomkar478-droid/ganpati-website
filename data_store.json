@@ -16,5 +16,11 @@
     "address": "गणेश चौक, मुख्य रस्ता, पुणे"
   },
   "gallery": [],
-  "vargani_records": []
+  "vargani_records": [],
+  "users": [
+    {
+      "mobile": "9876543210",
+      "last_login": "09-09-2026 05:39 PM"
+    }
+  ]
 }

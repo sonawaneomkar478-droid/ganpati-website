@@ -12,8 +12,8 @@
 
     <!-- Festive Mandal Header -->
     <header class="mandal-top-header">
-        <h1>🚩 {{ settings.mandal_name }} 🚩</h1>
-        <p class="subtitle">{{ settings.tagline }}</p>
+        <h1>🚩 {{ settings.mandal_name or 'श्री गणेशोत्सव मित्र मंडळ, पुणे' }} 🚩</h1>
+        <p class="subtitle">{{ settings.tagline or 'वर्गणी संकलन व ऑनलाईन डिजिटल पावती प्रणाली २०२६' }}</p>
         <div class="header-links">
             {% if session.role == 'admin' %}
                 <a href="/admin" class="link-btn" style="background: #ffb703; color: #000;">🔐 Admin Portal</a>
