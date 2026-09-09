@@ -176,11 +176,15 @@
             </div>
 
             <div style="display: flex; justify-content: center; gap: 12px; margin-top: 1.8rem; flex-wrap: wrap;" class="btn-print-group">
-                <button onclick="window.print()" class="btn-nav btn-nav-primary" style="padding: 10px 24px; font-size: 1rem; cursor: pointer;">
-                    🖨️ पावती प्रिंट करा / PDF
+                <button onclick="downloadReceiptPDF()" class="btn-nav btn-nav-primary" style="padding: 10px 20px; font-size: 0.95rem; cursor: pointer; background: linear-gradient(135deg, #d84315, #b71c1c);">
+                    📥 PDF डाउनलोड करा (Download PDF)
+                </button>
+
+                <button onclick="window.print()" class="btn-nav btn-nav-outline" style="padding: 10px 20px; font-size: 0.95rem; cursor: pointer;">
+                    🖨️ प्रिंट करा
                 </button>
                 
-                <a href="https://api.whatsapp.com/send?text={{ ('माझी ' + settings.mandal_name + ' ची गणेशोत्सव वर्गणी पावती (%23' + record.receipt_no + ') : ₹' + (record.amount|string))|urlencode }}" target="_blank" class="btn-wa-share">
+                <a href="https://api.whatsapp.com/send?text={{ ('🚩 ' + settings.mandal_name + ' 🚩\nमाझी ऑनलाईन गणेशोत्सव वर्गणी पावती (' + record.receipt_no + ') डाउनलोड करा:\n' + request.url)|urlencode }}" target="_blank" class="btn-wa-share">
                     💬 WhatsApp वर शेअर करा
                 </a>
             </div>
@@ -189,5 +193,28 @@
 
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        function downloadReceiptPDF() {
+            const btnGroup = document.querySelector('.btn-print-group');
+            if (btnGroup) btnGroup.style.display = 'none';
+
+            const element = document.querySelector('.receipt-card');
+            const opt = {
+                margin:       0.1,
+                filename:     'Ganpati_Vargani_Receipt_{{ record.receipt_no }}.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            
+            html2pdf().set(opt).from(element).save().then(() => {
+                if (btnGroup) btnGroup.style.display = 'flex';
+            }).catch(e => {
+                if (btnGroup) btnGroup.style.display = 'flex';
+                window.print();
+            });
+        }
+    </script>
 </body>
 </html>
