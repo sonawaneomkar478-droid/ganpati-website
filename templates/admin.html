@@ -644,40 +644,49 @@
             document.getElementById('pdfDate').innerText = dateStr || new Date().toLocaleDateString('mr-IN');
             document.getElementById('pdfPaymentMode').innerText = paymentMode || 'Cash';
 
+            const wrapper = document.getElementById('pdfRenderWrapper');
             const element = document.getElementById('pdfContainer');
             
-            html2canvas(element, {
-                scale: 2,
-                useCORS: true,
-                scrollY: 0,
-                scrollX: 0,
-                windowWidth: 850,
-                backgroundColor: '#ffffff'
-            }).then(canvas => {
-                const image = canvas.toDataURL('image/png');
-                const link = document.createElement('a');
-                link.download = `Ganpati_Vargani_Receipt_${receiptNo}.png`;
-                link.href = image;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+            // Show offscreen/modal wrapper briefly for html2canvas
+            if (wrapper) wrapper.style.display = 'flex';
 
-                alert(`✅ पावतीची फोटो फाईल (Ganpati_Vargani_Receipt_${receiptNo}.png) डाऊनलोड झाली आहे!\n\nआता WhatsApp उघडत आहे. WhatsApp मध्ये अटॅचमेंट (📎 -> Photo/Gallery) आयकॉनवर क्लिक करून डाऊनलोड झालेला पावतीचा फोटो पाठवा.`);
-                
-                const mandalName = "{{ settings.mandal_name or 'श्री गणेशोत्सव मित्र मंडळ' }}";
-                const waText = `🚩 ${mandalName} 🚩\n\nनमस्कार ${name},\nआपली ₹${amount} वर्गणी जमा झाली असून मंडळाकडून पावती मंजूर करण्यात आली आहे!\n\nपावती क्रमांक: ${receiptNo}\n(टीप: डाउनलोड झालेला पावतीचा फोटो सोबत जोडला आहे)\n\nमंडळाकडून आपले मनःपूर्वक आभार!\nगणपती बाप्पा मोरया! 🚩`;
-                const encoded = encodeURIComponent(waText);
-                window.open(`https://api.whatsapp.com/send?phone=91${mobile}&text=${encoded}`, '_blank');
-            }).catch(e => {
-                console.error('Image generation error:', e);
-                alert('❌ पावतीचा फोटो बनवण्यात अडचण आली. कृपया पुन्हा प्रयत्न करा.');
-            });
+            setTimeout(() => {
+                html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    scrollY: 0,
+                    scrollX: 0,
+                    windowWidth: 850,
+                    backgroundColor: '#ffffff'
+                }).then(canvas => {
+                    if (wrapper) wrapper.style.display = 'none';
+
+                    const image = canvas.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.download = `Ganpati_Vargani_Receipt_${receiptNo}.png`;
+                    link.href = image;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    alert(`✅ पावतीची फोटो फाईल (Ganpati_Vargani_Receipt_${receiptNo}.png) डाऊनलोड झाली आहे!\n\nआता WhatsApp उघडत आहे. WhatsApp मध्ये अटॅचमेंट (📎 -> Photo/Gallery) आयकॉनवर क्लिक करून डाऊनलोड झालेला पावतीचा फोटो पाठवा.`);
+                    
+                    const mandalName = "{{ settings.mandal_name or 'श्री गणेशोत्सव मित्र मंडळ' }}";
+                    const waText = `🚩 ${mandalName} 🚩\n\nनमस्कार ${name},\nआपली ₹${amount} वर्गणी जमा झाली असून मंडळाकडून पावती मंजूर करण्यात आली आहे!\n\nपावती क्रमांक: ${receiptNo}\n(टीप: डाऊनलोड झालेला पावतीचा फोटो सोबत जोडला आहे)\n\nमंडळाकडून आपले मनःपूर्वक आभार!\nगणपती बाप्पा मोरया! 🚩`;
+                    const encoded = encodeURIComponent(waText);
+                    window.open(`https://api.whatsapp.com/send?phone=91${mobile}&text=${encoded}`, '_blank');
+                }).catch(e => {
+                    if (wrapper) wrapper.style.display = 'none';
+                    console.error('Image generation error:', e);
+                    alert('❌ पावतीचा फोटो बनवण्यात अडचण आली. कृपया पुन्हा प्रयत्न करा.');
+                });
+            }, 50);
         }
     </script>
 
-    <!-- Off-Screen Render Container for High-Resolution Crisp PDF Generation -->
-    <div id="pdfRenderWrapper" style="position: absolute; top: 0; left: 0; width: 600px; z-index: -9999; opacity: 1; pointer-events: none; overflow: hidden; background: #ffffff;">
-        <div id="pdfContainer" style="width: 600px; background: #ffffff; padding: 25px; border: 3.5px double #ffb703; border-radius: 16px; font-family: 'Poppins', sans-serif; color: #1e293b; box-sizing: border-box;">
+    <!-- Modal Container for High-Resolution Crisp Image/PDF Generation (Hidden by default) -->
+    <div id="pdfRenderWrapper" style="display: none; position: fixed; inset: 0; z-index: 99999; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; padding: 12px; overflow: auto;">
+        <div id="pdfContainer" style="width: 100%; max-width: 550px; background: #ffffff; padding: 25px; border: 3.5px double #ffb703; border-radius: 16px; font-family: 'Poppins', sans-serif; color: #1e293b; box-sizing: border-box; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
             <div style="text-align: center; border-bottom: 2px dashed #d84315; padding-bottom: 12px; margin-bottom: 15px;">
                 <div style="font-size: 0.9rem; color: #d84315; font-weight: 700;">🚩 श्री गणेशाय नमः 🚩</div>
                 <h2 id="pdfMandalName" style="font-family: 'Khand', sans-serif, system-ui; font-size: 2.2rem; color: #9a031e; margin: 4px 0; font-weight: 700;">{{ settings.mandal_name or 'श्री गणेशोत्सव मित्र मंडळ' }}</h2>
