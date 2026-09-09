@@ -36,8 +36,13 @@
             <div class="slide {% if loop.first %}active{% endif %}">
                 {% if item.type == 'video' %}
                     {% if item.image_url.startswith('/static/') or item.image_url.endswith('.mp4') or item.image_url.endswith('.webm') or item.image_url.endswith('.mov') %}
-                        <!-- Local Video File Player (.mp4 / .mov) -->
-                        <video src="{{ item.image_url }}" controls autoplay loop muted class="slide-img-main" style="position:relative; z-index:3; width:100%; height:100%; object-fit:contain;"></video>
+                        <!-- Local Video File Player (.mp4 / .mov) with Sound Control -->
+                        <div style="position:relative; width:100%; height:100%;">
+                            <video id="slide_vid_{{ loop.index }}" src="{{ item.image_url }}" controls loop playsinline preload="metadata" class="slide-img-main" style="position:relative; z-index:3; width:100%; height:100%; object-fit:contain;"></video>
+                            <button type="button" onclick="enableVideoSound('slide_vid_{{ loop.index }}')" style="position:absolute; top:12px; right:12px; z-index:10; background: linear-gradient(135deg, #d84315, #b71c1c); color:#ffffff; border:1.5px solid #ffb703; padding:6px 14px; border-radius:20px; font-size:0.8rem; font-weight:700; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.6);">
+                                🔊 आवाजासह व्हिडिओ ऐका (Sound ON)
+                            </button>
+                        </div>
                     {% else %}
                         <!-- YouTube / External Video Link -->
                         <iframe src="{{ item.image_url }}" style="width:100%; height:100%; border:none; position:relative; z-index:3;" allowfullscreen></iframe>
@@ -45,7 +50,7 @@
                 {% else %}
                     <!-- Perfect Custom Size Auto-Fit Image Container -->
                     <div class="slide-bg-blur" style="background-image: url('{{ item.image_url }}');"></div>
-                    <img src="{{ item.image_url }}" alt="{{ item.title }}" class="slide-img-main">
+                    <img src="{{ item.image_url }}" alt="{{ item.title }}" class="slide-img-main" loading="lazy">
                 {% endif %}
                 <div class="slide-caption">
                     <h3>🚩 {{ item.title }}</h3>
@@ -189,6 +194,16 @@
             const qrBox = document.getElementById('qrContainer');
             if (modeSelect && qrBox) {
                 qrBox.style.display = modeSelect.value.includes('Online') ? 'block' : 'none';
+            }
+        }
+
+        // Video Sound Control
+        function enableVideoSound(id) {
+            const vid = document.getElementById(id);
+            if (vid) {
+                vid.muted = false;
+                vid.volume = 1.0;
+                vid.play().catch(e => console.log('Playback error:', e));
             }
         }
 
