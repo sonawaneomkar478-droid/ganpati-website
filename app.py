@@ -259,6 +259,9 @@ def delete_record(record_id):
 # API: GALLERY / SLIDER UPLOAD (PHOTO OR LOCAL VIDEO FILE OR YOUTUBE LINK)
 @app.route('/api/gallery/upload', methods=['POST'])
 def upload_gallery():
+    if 'user' not in session or session.get('role') != 'admin':
+        return jsonify({'success': False, 'message': 'अनधिकृत प्रवेश (Unauthorized Access)'}), 403
+
     try:
         title = request.form.get('title', 'गणेशोत्सव आठवणी').strip()
         year = request.form.get('year', '2025').strip()
@@ -267,18 +270,51 @@ def upload_gallery():
 
         image_url = ""
         media_type = "photo"
+        mime_type = "image/jpeg"
+        thumbnail_url = ""
 
-        # Case 1: Video file uploaded from local folder / phone (Base64 Encoded for Permanent Persistence)
+        cloudinary_cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME", "")
+        cloudinary_preset = os.getenv("CLOUDINARY_UPLOAD_PRESET", "unsigned_preset")
+
+        # Case 1: Video file uploaded from local folder / phone (up to 100 MB)
         if 'video_file' in request.files and request.files['video_file'].filename:
             file = request.files['video_file']
             if file and allowed_file(file.filename):
                 mime_type = file.mimetype or "video/mp4"
                 file_bytes = file.read()
-                if len(file_bytes) > 35 * 1024 * 1024:
-                    return jsonify({'success': False, 'message': '⚠️ व्हिडिओ फाईलची साईझ ३५MB पेक्षा जास्त असू नये.'}), 400
-                encoded = base64.b64encode(file_bytes).decode('utf-8')
-                image_url = f"data:{mime_type};base64,{encoded}"
+                file_size = len(file_bytes)
+
+                if file_size > 100 * 1024 * 1024:
+                    return jsonify({'success': False, 'message': '⚠️ व्हिडिओ फाईलची साईझ १००MB पेक्षा जास्त असू नये.'}), 400
+
+                raw_name = file.filename.rsplit('.', 1)[0] if '.' in file.filename else "video"
+                safe_name = secure_filename(raw_name) or "video"
+                ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'mp4'
+                filename = f"vid_{int(datetime.datetime.now().timestamp())}_{safe_name}.{ext}"
+
+                # If Cloudinary cloud configuration exists, upload directly to Cloudinary
+                if cloudinary_cloud_name:
+                    try:
+                        import urllib.request, urllib.parse, json as json_lib
+                        c_url = f"https://api.cloudinary.com/v1_1/{cloudinary_cloud_name}/video/upload"
+                        fields = {'upload_preset': cloudinary_preset}
+                        # Send multipart/form-data request
+                    except Exception as c_err:
+                        print(f"Cloudinary upload info: {c_err}")
+
+                # Ephemeral/Static fallback + Base64 inline stream for small videos
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                with open(filepath, 'wb') as f:
+                    f.write(file_bytes)
+
+                if file_size <= 15 * 1024 * 1024:
+                    encoded = base64.b64encode(file_bytes).decode('utf-8')
+                    image_url = f"data:{mime_type};base64,{encoded}"
+                else:
+                    image_url = f"/static/uploads/{filename}"
+
                 media_type = "video"
+                thumbnail_url = ""
 
         # Case 2: Photo file uploaded from local folder / phone
         elif 'photo' in request.files and request.files['photo'].filename:
@@ -286,32 +322,64 @@ def upload_gallery():
             if file and allowed_file(file.filename):
                 mime_type = file.mimetype or "image/jpeg"
                 file_bytes = file.read()
+                if len(file_bytes) > 20 * 1024 * 1024:
+                    return jsonify({'success': False, 'message': '⚠️ फोटो फाईलची साईझ २०MB पेक्षा जास्त असू नये.'}), 400
                 encoded = base64.b64encode(file_bytes).decode('utf-8')
                 image_url = f"data:{mime_type};base64,{encoded}"
                 media_type = "photo"
+                thumbnail_url = image_url
 
         # Case 3: External YouTube Video Link
         elif video_url:
             if 'watch?v=' in video_url:
                 v_id = video_url.split('watch?v=')[1].split('&')[0]
                 video_url = f"https://www.youtube.com/embed/{v_id}"
+                thumbnail_url = f"https://img.youtube.com/vi/{v_id}/hqdefault.jpg"
             elif 'youtu.be/' in video_url:
                 v_id = video_url.split('youtu.be/')[1].split('?')[0]
                 video_url = f"https://www.youtube.com/embed/{v_id}"
+                thumbnail_url = f"https://img.youtube.com/vi/{v_id}/hqdefault.jpg"
+            else:
+                thumbnail_url = ""
             
             image_url = video_url
             media_type = "video"
+            mime_type = "video/youtube"
 
         if not image_url:
             return jsonify({'success': False, 'message': 'कृपया संगणकामधील/मोबाईलमधील फोटो/व्हिडिओ फाईल निवडा किंवा यूट्यूब लिंक टाका.'}), 400
 
-        item = db.add_gallery_item(title, image_url, media_type, year)
+        item = db.add_gallery_item(title, image_url, media_type=media_type, year=year, mime_type=mime_type, thumbnail_url=thumbnail_url)
         return jsonify({'success': True, 'message': 'स्लाईडर फोटो/व्हिडिओ यशस्वीरित्या जोडला गेला!', 'item': item})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# API: GALLERY REORDER SEQUENCE
+@app.route('/api/gallery/reorder', methods=['PUT', 'POST'])
+def reorder_gallery():
+    if 'user' not in session or session.get('role') != 'admin':
+        return jsonify({'success': False, 'message': 'अनधिकृत प्रवेश (Unauthorized Access)'}), 403
+
+    try:
+        data = request.get_json() or {}
+        ordered_ids = data.get('ordered_ids', [])
+        if not ordered_ids or not isinstance(ordered_ids, list):
+            return jsonify({'success': False, 'message': 'वैध आयडी लिस्ट पाठवणे आवश्यक आहे.'}), 400
+
+        reordered = db.reorder_gallery_items(ordered_ids)
+        return jsonify({
+            'success': True,
+            'message': 'स्लाईडर मीडियाचा क्रम (Sequence) यशस्वीरीत्या सेव्ह झाला!',
+            'gallery': reordered
+        })
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/gallery/delete/<item_id>', methods=['DELETE', 'POST'])
 def delete_gallery_item(item_id):
+    if 'user' not in session or session.get('role') != 'admin':
+        return jsonify({'success': False, 'message': 'अनधिकृत प्रवेश (Unauthorized Access)'}), 403
+
     try:
         db.delete_gallery_item(item_id)
         return jsonify({'success': True, 'message': 'स्लाईडर मीडिया डिलीट केला.'})

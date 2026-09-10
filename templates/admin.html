@@ -193,11 +193,18 @@
             </div>
         </div>
 
-        <!-- TAB 3: LOCAL PHOTO & VIDEO FILE UPLOAD -->
+        <!-- TAB 2: PHOTO / VIDEO SLIDER MANAGEMENT & DRAG-AND-DROP REORDERING -->
         <div id="sliderTab" class="tab-content" style="display: none;">
             <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.2rem; max-width: 650px; margin: 0 auto;">
-                <h2 style="font-family: 'Khand', sans-serif; font-size: 1.4rem; color: #1e293b; margin-bottom: 1rem;">🎬 फोल्डरमधील फोटो व व्हिडिओ अपलोड करा (Upload File)</h2>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ffb703; padding-bottom: 8px; margin-bottom: 1rem;">
+                    <div>
+                        <h2 style="font-family: 'Khand', sans-serif; font-size: 1.5rem; color: #1e293b; margin: 0;">📸 स्लाईडर मीडिया व्यवस्थापन</h2>
+                        <p style="font-size: 0.8rem; color: #64748b; margin: 0;">फोटो व व्हिडिओ अपलोड करा आणि त्यांची दाखवण्याची क्रमवारी (Sequence) ठरवा</p>
+                    </div>
+                </div>
 
+                <!-- UPLOAD FORM -->
                 <form id="sliderUploadForm" enctype="multipart/form-data">
                     <div class="input-group">
                         <label for="slide_title" class="input-label">शीर्षक / कॅप्शन *</label>
@@ -213,7 +220,7 @@
                         <label for="slide_type" class="input-label">मीडिया प्रकार (Select Upload Option)</label>
                         <select id="slide_type" name="type" class="nova-input">
                             <option value="photo">🖼️ फोल्डरमधील फोटो फाईल (.jpg, .png)</option>
-                            <option value="video_file">🎥 फोल्डरमधील व्हिडिओ फाईल (.mp4, .mov, .webm)</option>
+                            <option value="video_file">🎥 फोल्डरमधील व्हिडिओ फाईल (.mp4, .mov, .webm, up to 100MB)</option>
                             <option value="video">🔗 यूट्यूब / ऑनलाईन व्हिडिओ लिंक (YouTube Link)</option>
                         </select>
                     </div>
@@ -226,20 +233,20 @@
 
                     <!-- Video File Input -->
                     <div class="input-group" id="videoFileGroup" style="display: none;">
-                        <label for="slide_video_file" class="input-label">कम्प्युटर/मोबाईल फोल्डरमधील व्हिडिओ फाईल निवडा (.mp4)</label>
+                        <label for="slide_video_file" class="input-label">कम्प्युटर/मोबाईल फोल्डरमधील व्हिडिओ फाईल निवडा (.mp4, .mov)</label>
                         <input type="file" id="slide_video_file" name="video_file" class="nova-input" accept="video/mp4,video/webm,video/mov,video/*">
                     </div>
 
                     <!-- YouTube Link Input -->
                     <div class="input-group" id="videoGroup" style="display: none;">
                         <label for="slide_video_url" class="input-label">यूट्यूब व्हिडिओ Link</label>
-                        <input type="text" id="slide_video_url" name="video_url" class="nova-input" placeholder="https://www.youtube.com/embed/...">
+                        <input type="text" id="slide_video_url" name="video_url" class="nova-input" placeholder="https://www.youtube.com/watch?v=...">
                     </div>
 
-                    <button type="submit" id="sliderSubmitBtn" class="btn-nova-submit" style="background: #059669;">➕ स्लाईडर मध्ये जोडा (Upload Now)</button>
+                    <button type="submit" id="sliderSubmitBtn" class="btn-nova-submit" style="background: #059669; font-weight: 700;">➕ स्लाईडर मध्ये जोडा (Upload Media)</button>
                 </form>
 
-                <!-- Live Upload Progress Bar Container (व्हिडिओ/फोटो अपलोड प्रोग्रेस बार ॲनिमेशन) -->
+                <!-- Live Upload Progress Bar Container -->
                 <div id="sliderProgressBox" style="display: none; margin-top: 1rem; background: #fff8e1; border: 1px solid #ffe082; border-radius: 12px; padding: 1rem;">
                     <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 0.88rem; color: #b71c1c; margin-bottom: 6px;">
                         <span id="sliderProgressStatus">⏳ फाईल अपलोड होत आहे...</span>
@@ -248,30 +255,57 @@
                     <div style="width: 100%; height: 18px; background: #cbd5e1; border-radius: 10px; overflow: hidden; position: relative; border: 1px solid #94a3b8;">
                         <div id="sliderProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #ffb703, #d84315, #059669); transition: width 0.15s ease; border-radius: 10px; box-shadow: 0 0 10px rgba(255, 183, 3, 0.8);"></div>
                     </div>
-                    <small style="color: #64748b; font-size: 0.75rem; display: block; margin-top: 6px; text-align: center;">(कृपया व्हिडिओ अपलोड पूर्ण होईपर्यंत पेज बंद करू नका)</small>
+                    <small style="color: #64748b; font-size: 0.75rem; display: block; margin-top: 6px; text-align: center;">(कृपया फाईल अपलोड पूर्ण होईपर्यंत पेज बंद करू नका)</small>
                 </div>
 
-                <!-- Current Slider Media List -->
-                <div style="margin-top: 1.5rem;">
-                    <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.8rem;">सध्याचे स्लाईडर फोटो व व्हिडिओ:</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;">
+                <!-- MEDIA SEQUENCE / ORDER MANAGEMENT SECTION -->
+                <div style="margin-top: 2rem; border-top: 2px dashed #cbd5e1; padding-top: 1.2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px;">
+                        <div>
+                            <h3 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0;">🔢 फोटो व व्हिडिओ दाखवण्याचा क्रम (Media Order)</h3>
+                            <small style="color: #64748b;">(कार्ड्स ☰ ड्रॅग करा किंवा ⬆ ⬇ बटणे दाबून क्रम बदला, नंतर 'Save Order' वर क्लिक करा)</small>
+                        </div>
+                        <button onclick="saveMediaSequence()" id="saveOrderBtn" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; border: none; padding: 8px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(37,99,235,0.3); font-size: 0.9rem;">
+                            💾 क्रम सेव्ह करा (Save Order)
+                        </button>
+                    </div>
+
+                    <div id="mediaOrderContainer" style="display: flex; flex-direction: column; gap: 10px;">
                         {% for item in gallery %}
-                        <div style="border: 1px solid #cbd5e1; border-radius: 10px; overflow: hidden; background: #f8fafc;">
-                            {% if item.type == 'video' %}
-                                {% if 'youtube.com' in item.image_url or 'youtu.be' in item.image_url %}
-                                    <div style="background: #0f172a; color: #ffb703; text-align: center; padding: 1.5rem 0; font-size: 0.8rem; font-weight: 600;">🎬 YouTube Video</div>
+                        <div class="media-order-card" data-id="{{ item._id }}" draggable="true" style="display: flex; align-items: center; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 10px; gap: 12px; cursor: grab; transition: all 0.2s ease;">
+                            <div style="font-size: 1.3rem; color: #64748b; cursor: grab; padding: 0 4px;" title="ड्रॅग करून क्रम बदला">☰</div>
+                            <div class="seq-badge" style="background: #0f172a; color: #ffb703; font-weight: 800; padding: 4px 10px; border-radius: 8px; font-size: 0.85rem; min-width: 32px; text-align: center;">
+                                #{{ loop.index }}
+                            </div>
+
+                            <div style="width: 70px; height: 50px; border-radius: 8px; overflow: hidden; background: #000; flex-shrink: 0;">
+                                {% if item.type == 'video' %}
+                                    {% if 'youtube.com' in item.image_url or 'youtu.be' in item.image_url %}
+                                        <div style="color: #ffb703; text-align: center; line-height: 50px; font-size: 0.75rem; font-weight: 700; background: #0f172a;">YouTube</div>
+                                    {% else %}
+                                        <video src="{{ item.image_url }}" style="width: 100%; height: 100%; object-fit: cover;" preload="metadata"></video>
+                                    {% endif %}
                                 {% else %}
-                                    <video src="{{ item.image_url }}" style="width: 100%; height: 90px; object-fit: cover; background: #000;" preload="metadata"></video>
+                                    <img src="{{ item.image_url }}" alt="{{ item.title }}" style="width: 100%; height: 100%; object-fit: cover;">
                                 {% endif %}
-                            {% else %}
-                                <img src="{{ item.image_url }}" alt="{{ item.title }}" style="width: 100%; height: 90px; object-fit: cover;">
-                            {% endif %}
-                            <div style="padding: 6px; font-size: 0.78rem;">
-                                <strong>{{ item.title }}</strong>
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
-                                    <span style="color: #64748b; font-size: 0.72rem;">{{ item.year }}</span>
-                                    <button onclick="deleteSliderItem('{{ item._id }}', this)" style="color: #dc2626; border: none; background: none; cursor: pointer; font-size: 0.78rem; font-weight: 700;">🗑️ हटवा</button>
+                            </div>
+
+                            <div style="flex-grow: 1; min-width: 0;">
+                                <div style="font-weight: 700; font-size: 0.88rem; color: #1e293b; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                                    {{ item.title }}
                                 </div>
+                                <div style="display: flex; gap: 8px; align-items: center; margin-top: 3px;">
+                                    <span style="background: {% if item.type == 'video' %}#fee2e2{% else %}#e0f2fe{% endif %}; color: {% if item.type == 'video' %}#991b1b{% else %}#0369a1{% endif %}; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 6px;">
+                                        {% if item.type == 'video' %}🎥 Video{% else %}📷 Photo{% endif %}
+                                    </span>
+                                    <span style="color: #64748b; font-size: 0.75rem;">वर्ष: {{ item.year }}</span>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                                <button onclick="moveMediaItem(this, -1)" style="border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; padding: 4px 8px; cursor: pointer;" title="वर घ्या">⬆</button>
+                                <button onclick="moveMediaItem(this, 1)" style="border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; padding: 4px 8px; cursor: pointer;" title="खाली घ्या">⬇</button>
+                                <button onclick="deleteSliderItem('{{ item._id }}', this)" style="color: #dc2626; border: 1px solid #f87171; background: #fef2f2; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-weight: 700;" title="हटवा">🗑️</button>
                             </div>
                         </div>
                         {% endfor %}
@@ -643,6 +677,136 @@
             const encoded = encodeURIComponent(waText);
             window.open(`https://api.whatsapp.com/send?phone=91${mobile}&text=${encoded}`, '_blank');
         }
+
+        // DRAG & DROP MEDIA SEQUENCE MANAGEMENT JAVASCRIPT
+        let draggedMediaCard = null;
+
+        function initMediaDragAndDrop() {
+            const container = document.getElementById('mediaOrderContainer');
+            if (!container) return;
+
+            const cards = container.querySelectorAll('.media-order-card');
+            cards.forEach(card => {
+                card.addEventListener('dragstart', function(e) {
+                    draggedMediaCard = this;
+                    this.style.opacity = '0.4';
+                    this.style.border = '2px dashed #2563eb';
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+
+                card.addEventListener('dragend', function() {
+                    this.style.opacity = '1';
+                    this.style.border = '1.5px solid #cbd5e1';
+                    draggedMediaCard = null;
+                    updateMediaSequenceBadges();
+                });
+
+                card.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                });
+
+                card.addEventListener('dragenter', function(e) {
+                    e.preventDefault();
+                    if (this !== draggedMediaCard) {
+                        this.style.border = '2px solid #2563eb';
+                    }
+                });
+
+                card.addEventListener('dragleave', function() {
+                    this.style.border = '1.5px solid #cbd5e1';
+                });
+
+                card.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.style.border = '1.5px solid #cbd5e1';
+                    if (draggedMediaCard && this !== draggedMediaCard) {
+                        const allCards = Array.from(container.children);
+                        const draggedIdx = allCards.indexOf(draggedMediaCard);
+                        const targetIdx = allCards.indexOf(this);
+
+                        if (draggedIdx < targetIdx) {
+                            container.insertBefore(draggedMediaCard, this.nextSibling);
+                        } else {
+                            container.insertBefore(draggedMediaCard, this);
+                        }
+                        updateMediaSequenceBadges();
+                    }
+                });
+            });
+        }
+
+        function updateMediaSequenceBadges() {
+            const container = document.getElementById('mediaOrderContainer');
+            if (!container) return;
+            const cards = container.querySelectorAll('.media-order-card');
+            cards.forEach((card, idx) => {
+                const badge = card.querySelector('.seq-badge');
+                if (badge) badge.innerText = `#${idx + 1}`;
+            });
+        }
+
+        function moveMediaItem(btn, direction) {
+            const card = btn.closest('.media-order-card');
+            if (!card) return;
+            const container = card.parentElement;
+            if (direction === -1 && card.previousElementSibling) {
+                container.insertBefore(card, card.previousElementSibling);
+            } else if (direction === 1 && card.nextElementSibling) {
+                container.insertBefore(card.nextElementSibling, card);
+            }
+            updateMediaSequenceBadges();
+        }
+
+        async function saveMediaSequence() {
+            const container = document.getElementById('mediaOrderContainer');
+            if (!container) return;
+            const saveBtn = document.getElementById('saveOrderBtn');
+            
+            const cards = container.querySelectorAll('.media-order-card');
+            const ordered_ids = Array.from(cards).map(c => c.getAttribute('data-id'));
+
+            if (ordered_ids.length === 0) {
+                alert('⚠️ क्रम सेव्ह करण्यासाठी एकही फाईल उपलब्ध नाही.');
+                return;
+            }
+
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.innerText = '⏳ सेव्ह होत आहे...';
+            }
+
+            try {
+                const res = await fetch('/api/gallery/reorder', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ordered_ids: ordered_ids })
+                });
+
+                const data = await res.json();
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerText = '💾 क्रम सेव्ह करा (Save Order)';
+                }
+
+                if (data.success) {
+                    alert('✅ स्लाईडर मीडियाचा क्रम (Sequence) यशस्वीरीत्या सेव्ह झाला!');
+                    updateMediaSequenceBadges();
+                } else {
+                    alert('❌ क्रम सेव्ह करताना एरर: ' + data.message);
+                }
+            } catch(e) {
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerText = '💾 क्रम सेव्ह करा (Save Order)';
+                }
+                alert('❌ नेटवर्क एरर! क्रम सेव्ह झाला नाही.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initMediaDragAndDrop();
+        });
     </script>
 </body>
 </html>

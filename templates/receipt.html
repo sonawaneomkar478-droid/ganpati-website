@@ -79,6 +79,29 @@
             font-size: 0.95rem;
             box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
         }
+        @media (max-width: 480px) {
+            .receipt-card {
+                margin: 1rem auto;
+                padding: 1.5rem 1rem;
+                width: 95%;
+                box-sizing: border-border-box;
+            }
+            .receipt-head h2 {
+                font-size: 1.7rem;
+            }
+            .receipt-item {
+                font-size: 0.9rem;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            .receipt-val {
+                word-break: break-word;
+            }
+            .btn-print-group button, .btn-print-group a {
+                width: 100%;
+                justify-content: center;
+            }
+        }
         @media print {
             .navbar, .btn-print-group { display: none !important; }
             .receipt-card { border: 2px solid #000; box-shadow: none; margin: 0 auto; }

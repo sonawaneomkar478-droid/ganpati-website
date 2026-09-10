@@ -109,180 +109,56 @@ def init_db():
         db = get_db()
         if db.settings.count_documents({}) == 0:
             db.settings.insert_one(local_data.get("settings", DEFAULT_SETTINGS.copy()))
+        try:
+            db.gallery.create_index([("display_order", 1)])
+            db.gallery.create_index([("created_at", -1)])
+            db.vargani_records.create_index([("created_at", -1)])
+            db.vargani_records.create_index([("receipt_no", 1)])
+        except Exception as idx_err:
+            print(f"MongoDB Index Info: {idx_err}")
         print("Database initialized successfully!")
     except Exception as e:
         print(f"MongoDB Init Info: {e}")
 
-def generate_receipt_no():
-    records = get_all_vargani()
-    count = len(records) + 1
-    receipt_no = f"VRG-2026-{count:04d}"
-    existing_nos = {r.get("receipt_no") for r in records}
-    while receipt_no in existing_nos:
-        count += 1
-        receipt_no = f"VRG-2026-{count:04d}"
-    return receipt_no
-
-def add_vargani(data):
-    rec_id = f"rec_{int(datetime.datetime.now().timestamp())}"
-    now_str = datetime.datetime.now().strftime("%d-%m-%Y %I:%M %p")
-    record = {
-        "_id": rec_id,
-        "receipt_no": generate_receipt_no(),
-        "name": data.get("name", "").strip(),
-        "mobile": data.get("mobile", "").strip(),
-        "address": data.get("address", "").strip(),
-        "amount": int(data.get("amount", 0)),
-        "payment_mode": data.get("payment_mode", "Cash"),
-        "transaction_id": data.get("transaction_id", "").strip(),
-        "status": data.get("status", "Pending"),
-        "screenshot_url": data.get("screenshot_url", ""),
-        "created_at_str": now_str,
-        "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    }
-    
-    # Save MongoDB
-    try:
-        db = get_db()
-        db_rec = record.copy()
-        db_rec["_id"] = ObjectId()
-        res = db.vargani_records.insert_one(db_rec)
-        record["_id"] = str(res.inserted_id)
-    except Exception as e:
-        print(f"MongoDB record insert fail: {e}")
-
-    # Save local json
-    local_data = load_json_data()
-    v_recs = local_data.get("vargani_records", [])
-    v_recs.insert(0, record)
-    local_data["vargani_records"] = v_recs
-    save_json_data(local_data)
-
-    return record
-
-def get_all_vargani(status=None, search=None):
-    records = []
-    try:
-        db = get_db()
-        query = {}
-        if status and status != "All":
-            query["status"] = status
-        if search:
-            query["$or"] = [
-                {"name": {"$regex": search, "$options": "i"}},
-                {"mobile": {"$regex": search, "$options": "i"}},
-                {"receipt_no": {"$regex": search, "$options": "i"}},
-                {"transaction_id": {"$regex": search, "$options": "i"}}
-            ]
-        m_recs = list(db.vargani_records.find(query).sort("created_at", -1))
-        for r in m_recs:
-            r["_id"] = str(r["_id"])
-            if isinstance(r.get("created_at"), datetime.datetime):
-                r["created_at_str"] = r["created_at"].strftime("%d-%m-%Y %I:%M %p")
-            records.append(r)
-        if records:
-            return records
-    except Exception as e:
-        print(f"MongoDB read all vargani fail: {e}")
-
-    local_data = load_json_data()
-    records = local_data.get("vargani_records", [])
-    if status and status != "All":
-        records = [r for r in records if r.get("status") == status]
-    if search:
-        s = search.lower()
-        records = [r for r in records if s in r.get("name", "").lower() or s in r.get("mobile", "").lower() or s in r.get("receipt_no", "").lower()]
-    return records
-
-def get_vargani_by_receipt_no(receipt_no):
-    records = get_all_vargani()
-    for r in records:
-        if r.get("receipt_no") == receipt_no:
-            return r
-    return None
-
-def verify_vargani(record_id):
-    try:
-        db = get_db()
-        if len(record_id) == 24:
-            db.vargani_records.update_one({"_id": ObjectId(record_id)}, {"$set": {"status": "Verified"}})
-        else:
-            db.vargani_records.update_one({"_id": record_id}, {"$set": {"status": "Verified"}})
-    except Exception as e:
-        print(f"MongoDB verify error: {e}")
-
-    local_data = load_json_data()
-    recs = local_data.get("vargani_records", [])
-    updated_rec = None
-    for r in recs:
-        if str(r.get("_id")) == str(record_id) or r.get("receipt_no") == record_id:
-            r["status"] = "Verified"
-            updated_rec = r
-            break
-    save_json_data(local_data)
-    
-    if not updated_rec:
-        updated_rec = get_vargani_by_receipt_no(record_id)
-        if updated_rec:
-            updated_rec["status"] = "Verified"
-    return updated_rec
-
-def delete_vargani(record_id):
-    try:
-        db = get_db()
-        if len(record_id) == 24:
-            db.vargani_records.delete_one({"_id": ObjectId(record_id)})
-        else:
-            db.vargani_records.delete_one({"_id": record_id})
-    except Exception as e:
-        print(f"MongoDB delete record error: {e}")
-
-    local_data = load_json_data()
-    recs = local_data.get("vargani_records", [])
-    new_recs = [r for r in recs if str(r.get("_id")) != str(record_id) and r.get("receipt_no") != record_id]
-    local_data["vargani_records"] = new_recs
-    save_json_data(local_data)
-    return True
-
-def get_stats():
-    records = get_all_vargani()
-    total_collected = sum(int(r.get("amount", 0)) for r in records if r.get("status") == "Verified")
-    pending_amount = sum(int(r.get("amount", 0)) for r in records if r.get("status") in ["Pending", "Pending Cash"])
-    total_donors = len(records)
-    verified_count = len([r for r in records if r.get("status") == "Verified"])
-    pending_count = len([r for r in records if r.get("status") in ["Pending", "Pending Cash"]])
-    cash_pending_count = len([r for r in records if r.get("status") == "Pending Cash"])
-    return {
-        "total_collected": total_collected,
-        "pending_amount": pending_amount,
-        "total_donors": total_donors,
-        "verified_count": verified_count,
-        "pending_count": pending_count,
-        "cash_pending_count": cash_pending_count
-    }
-
 def get_gallery():
+    items = []
     try:
         db = get_db()
         items = list(db.gallery.find({}))
-        items.sort(key=lambda x: x.get("created_at", ""), reverse=True)
         for item in items:
             item["_id"] = str(item["_id"])
-        return items
     except Exception as e:
         print(f"MongoDB get_gallery info: {e}")
     
-    local_data = load_json_data()
-    return local_data.get("gallery", [])
+    if not items:
+        local_data = load_json_data()
+        items = local_data.get("gallery", [])
 
-def add_gallery_item(title, image_url, media_type="photo", year="2026"):
+    for idx, item in enumerate(items):
+        if "display_order" not in item or item["display_order"] is None:
+            item["display_order"] = idx + 1
+        if "type" not in item:
+            item["type"] = "photo"
+
+    items.sort(key=lambda x: (int(x.get("display_order", 9999)), str(x.get("created_at", ""))))
+    return items
+
+def add_gallery_item(title, image_url, media_type="photo", year="2026", mime_type=None, thumbnail_url=None):
+    existing_items = get_gallery()
+    max_order = max([int(i.get("display_order", 0)) for i in existing_items], default=0)
+    new_order = max_order + 1
+
     item_id = f"item_{int(datetime.datetime.now().timestamp())}"
     item = {
         "_id": item_id,
         "title": title.strip(),
         "image_url": image_url.strip(),
         "type": media_type,
+        "mime_type": mime_type or ("video/mp4" if media_type == "video" else "image/jpeg"),
+        "thumbnail_url": thumbnail_url or (image_url if media_type == "photo" else ""),
+        "display_order": new_order,
         "year": year,
+        "is_active": True,
         "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
@@ -297,11 +173,55 @@ def add_gallery_item(title, image_url, media_type="photo", year="2026"):
 
     local_data = load_json_data()
     gallery = local_data.get("gallery", [])
-    gallery.insert(0, item)
+    gallery.append(item)
     local_data["gallery"] = gallery
     save_json_data(local_data)
 
     return item
+
+def reorder_gallery_items(ordered_ids):
+    if not isinstance(ordered_ids, list):
+        return False
+
+    existing_items = get_gallery()
+    items_by_id = {str(item["_id"]): item for item in existing_items}
+    
+    reordered_list = []
+    order_counter = 1
+
+    for item_id in ordered_ids:
+        s_id = str(item_id)
+        if s_id in items_by_id:
+            item = items_by_id[s_id]
+            item["display_order"] = order_counter
+            reordered_list.append(item)
+            del items_by_id[s_id]
+            order_counter += 1
+
+    for item in items_by_id.values():
+        item["display_order"] = order_counter
+        reordered_list.append(item)
+        order_counter += 1
+
+    try:
+        db = get_db()
+        for item in reordered_list:
+            item_id = item["_id"]
+            new_order = item["display_order"]
+            if len(item_id) == 24:
+                try:
+                    db.gallery.update_one({"_id": ObjectId(item_id)}, {"$set": {"display_order": new_order}})
+                except Exception:
+                    pass
+            db.gallery.update_one({"_id": item_id}, {"$set": {"display_order": new_order}})
+    except Exception as e:
+        print(f"MongoDB reorder error: {e}")
+
+    local_data = load_json_data()
+    local_data["gallery"] = reordered_list
+    save_json_data(local_data)
+    
+    return reordered_list
 
 def delete_gallery_item(item_id):
     try:
@@ -318,6 +238,21 @@ def delete_gallery_item(item_id):
     local_data = load_json_data()
     gallery = local_data.get("gallery", [])
     new_gallery = [g for g in gallery if str(g.get("_id")) != str(item_id)]
+    
+    for idx, item in enumerate(new_gallery):
+        item["display_order"] = idx + 1
+        try:
+            db = get_db()
+            g_id = str(item.get("_id", ""))
+            if len(g_id) == 24:
+                try:
+                    db.gallery.update_one({"_id": ObjectId(g_id)}, {"$set": {"display_order": idx + 1}})
+                except Exception:
+                    pass
+            db.gallery.update_one({"_id": g_id}, {"$set": {"display_order": idx + 1}})
+        except Exception:
+            pass
+
     local_data["gallery"] = new_gallery
     save_json_data(local_data)
     return True
