@@ -7,7 +7,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Khand:wght@600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% if gallery and gallery[0] and gallery[0].image_url %}
+    <link rel="preload" as="image" href="{{ gallery[0].image_url }}" fetchpriority="high">
+    {% endif %}
     <style>
         /* CRITICAL INLINE CSS: INSTANT SIMULTANEOUS 0ms RENDERING FOR HEADER, SLIDER & BUTTONS */
         .mandal-top-header, .photo-container, .action-buttons-container {
@@ -22,19 +24,19 @@
             grid-template-columns: 1fr 1fr !important;
             gap: 10px !important;
             max-width: 500px !important;
-            margin: 0.4rem auto 0.8rem auto !important;
+            margin: 0.6rem auto 1rem auto !important;
             padding: 0 10px !important;
         }
 
         @media (max-width: 600px) {
             .slider-box {
-                height: 34vh !important;
-                min-height: 210px !important;
-                max-height: 270px !important;
-                background: linear-gradient(135deg, #4a0011 0%, #800020 50%, #2e0814 100%) !important;
+                height: 48vh !important;
+                min-height: 330px !important;
+                max-height: 460px !important;
+                background: linear-gradient(135deg, #700202 0%, #4a0011 50%, #2e0814 100%) !important;
             }
             .mandal-top-header {
-                padding: 0.6rem 0.5rem 0.5rem !important;
+                padding: 0.7rem 0.5rem 0.5rem !important;
             }
         }
 
