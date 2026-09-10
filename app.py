@@ -76,7 +76,11 @@ def serve_upload(filename):
 @app.after_request
 def add_header(response):
     if request.path.startswith('/static/'):
-        response.headers['Cache-Control'] = 'public, max-age=31536000'
+        response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+        response.headers['Vary'] = 'Accept-Encoding'
+    elif not request.path.startswith('/api/'):
+        response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
     return response
 
 # LOGIN & AUTH ROUTES

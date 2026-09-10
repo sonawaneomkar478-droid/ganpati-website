@@ -8,6 +8,25 @@ MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
 DB_NAME = os.getenv("DB_NAME", "vargani_db")
 DATA_FILE = os.path.join(os.path.dirname(__file__), 'data_store.json')
 
+_CACHE = {}
+_CACHE_TTL = 300  # 5 minutes TTL
+
+def get_cached(key):
+    if key in _CACHE:
+        val, ts = _CACHE[key]
+        if datetime.datetime.now().timestamp() - ts < _CACHE_TTL:
+            return val
+    return None
+
+def set_cached(key, val):
+    _CACHE[key] = (val, datetime.datetime.now().timestamp())
+
+def invalidate_cache(key=None):
+    if key:
+        _CACHE.pop(key, None)
+    else:
+        _CACHE.clear()
+
 DEFAULT_SETTINGS = {
     "mandal_name": "श्री गणेशोत्सव मित्र मंडळ, पुणे",
     "tagline": "वर्गणी संकलन व ऑनलाईन डिजिटल पावती प्रणाली २०२६",
@@ -214,10 +233,16 @@ def add_vargani(data):
     v_recs.insert(0, record)
     local_data["vargani_records"] = v_recs
     save_json_data(local_data)
+    invalidate_cache()
 
     return record
 
 def get_all_vargani(status=None, search=None):
+    cached_key = f"vargani_{status}_{search}"
+    cached_res = get_cached(cached_key)
+    if cached_res is not None:
+        return cached_res
+
     records = []
     try:
         db = get_db()
@@ -237,18 +262,21 @@ def get_all_vargani(status=None, search=None):
             if isinstance(r.get("created_at"), datetime.datetime):
                 r["created_at_str"] = r["created_at"].strftime("%d-%m-%Y %I:%M %p")
             records.append(r)
-        if records:
-            return records
     except Exception as e:
         print(f"MongoDB read all vargani fail: {e}")
 
-    local_data = load_json_data()
-    records = local_data.get("vargani_records", [])
-    if status and status != "All":
-        records = [r for r in records if r.get("status") == status]
-    if search:
-        s = search.lower()
-        records = [r for r in records if s in r.get("name", "").lower() or s in r.get("mobile", "").lower() or s in r.get("receipt_no", "").lower()]
+    if not records:
+        local_data = load_json_data()
+        records = local_data.get("vargani_records", [])
+        if status and status != "All":
+            records = [r for r in records if r.get("status") == status]
+        if search:
+            s = search.lower()
+            records = [r for r in records if s in r.get("name", "").lower() or s in r.get("mobile", "").lower() or s in r.get("receipt_no", "").lower()]
+
+    # Guarantee strict reverse-chronological sorting (Latest donation at the VERY TOP #1)
+    records.sort(key=lambda x: str(x.get("created_at", "")), reverse=True)
+    set_cached(cached_key, records)
     return records
 
 def get_vargani_by_receipt_no(receipt_no):
@@ -289,6 +317,7 @@ def verify_vargani(record_id):
         updated_rec = get_vargani_by_receipt_no(record_id)
         if updated_rec:
             updated_rec["status"] = "Verified"
+    invalidate_cache()
     return updated_rec
 
 def delete_vargani(record_id):
@@ -306,6 +335,7 @@ def delete_vargani(record_id):
     new_recs = [r for r in recs if str(r.get("_id")) != str(record_id) and r.get("receipt_no") != record_id]
     local_data["vargani_records"] = new_recs
     save_json_data(local_data)
+    invalidate_cache()
     return True
 
 def get_stats():
