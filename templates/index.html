@@ -38,25 +38,32 @@
                 {% if item.type == 'video' %}
                     {% if 'youtube.com' in item.image_url or 'youtu.be' in item.image_url %}
                         <!-- External YouTube Video Link -->
-                        <div style="position:relative; width:100%; height:100%; background: #000;">
+                        <div style="position:relative; width:100%; height:100%; background: radial-gradient(circle at center, #2e0814 0%, #0d0206 100%);">
                             <iframe src="{{ item.image_url }}" style="width:100%; height:100%; border:none; position:relative; z-index:3;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                         </div>
                     {% else %}
-                        <!-- Clean Native Video Player with Full Controls & Poster -->
-                        <div style="position:relative; width:100%; height:100%; background: #000;">
-                            <video id="slide_vid_{{ loop.index }}" src="{{ item.image_url }}" controls playsinline preload="metadata" {% if item.thumbnail_url %}poster="{{ item.thumbnail_url }}"{% endif %} class="slide-video-player" style="width:100%; height:100%; object-fit:contain; position:relative; z-index:5; pointer-events:auto;">
+                        <!-- Native Video Player with Festive Background & Broken-Poster Safeguard -->
+                        <div style="position:relative; width:100%; height:100%; background: radial-gradient(circle at center, #2e0814 0%, #0d0206 100%); display:flex; align-items:center; justify-content:center;">
+                            <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#ffe082; opacity:0.35; z-index:1; pointer-events:none;">
+                                <span style="font-size:3rem;">🎥</span>
+                                <span style="font-size:0.8rem; margin-top:4px;">श्री गणेशोत्सव व्हिडिओ</span>
+                            </div>
+                            <video id="slide_vid_{{ loop.index }}" controls playsinline preload="metadata" {% if item.thumbnail_url %}poster="{{ item.thumbnail_url }}" onerror="this.removeAttribute('poster');"{% endif %} class="slide-video-player" style="width:100%; height:100%; object-fit:contain; position:relative; z-index:5; pointer-events:auto; background:transparent;">
                                 <source src="{{ item.image_url }}" type="{{ item.mime_type or 'video/mp4' }}">
+                                तुमचा ब्राऊझर व्हिडिओ प्ले करण्यास असमर्थ आहे.
                             </video>
                         </div>
                     {% endif %}
                 {% else %}
                     <!-- Auto-Fit Photo Container with Corrupt-Proof Fallback -->
                     <div class="slide-bg-blur" style="background-image: url('{{ item.image_url }}');"></div>
-                    <img src="{{ item.image_url }}" alt="{{ item.title }}" class="slide-img-main" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=1200&q=80';">
+                    <img src="{{ item.image_url }}" alt="{{ item.title }}" class="slide-img-main" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=1200&q=80';">
                 {% endif %}
                 <div class="slide-caption">
                     <h3>🚩 {{ item.title }}</h3>
-                    <p style="font-size: 0.8rem; color: #ffe082;">उत्सव वर्ष: {{ item.year }}</p>
+                    <p style="font-size: 0.8rem; color: #ffe082;">
+                        {% if item.type == 'video' %}🎥 व्हिडिओ{% else %}📷 फोटो{% endif %} | उत्सव वर्ष: {{ item.year }}
+                    </p>
                 </div>
             </div>
             {% endfor %}

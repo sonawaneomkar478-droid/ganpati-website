@@ -44,6 +44,56 @@ DEFAULT_GALLERY = [
     }
 ]
 
+def amount_to_marathi_words(amount):
+    try:
+        num = int(amount)
+    except Exception:
+        return f"{amount} रुपये फक्त"
+
+    if num <= 0:
+        return "शून्य रुपये"
+
+    units = {
+        0: "", 1: "एक", 2: "दोन", 3: "तीन", 4: "चार", 5: "पाच", 6: "सहा", 7: "सात", 8: "आठ", 9: "नऊ", 10: "दहा",
+        11: "अकरा", 12: "बारा", 13: "तेरा", 14: "चौदा", 15: "पंधरा", 16: "सोळा", 17: "सतरा", 18: "अठरा", 19: "एकोणीस", 20: "वीस",
+        21: "एकवीस", 22: "बावीस", 23: "तेवीस", 24: "चोवीस", 25: "पंचवीस", 26: "सव्वीस", 27: "सत्तावीस", 28: "अठ्ठावीस", 29: "एकोणतीस", 30: "तीस",
+        31: "एकतीस", 32: "बत्तीस", 33: "तेत्तीस", 34: "चौतीस", 35: "तीसपाच", 36: "छत्तीस", 37: "सदतीस", 38: "अडतीस", 39: "एकोणचाळीस", 40: "चाळीस",
+        41: "एकचाळीस", 42: "बेचाळीस", 43: "त्र्याचाळीस", 44: "चौचाळीस", 45: "पंचेचाळीस", 46: "सेचाळीस", 47: "सत्ताचाळीस", 48: "अठ्ठाचाळीस", 49: "एकोणपन्नास", 50: "पन्नास",
+        51: "एकपन्नास", 52: "बावन्न", 53: "त्रिपन्न", 54: "चौपन्न", 55: "पंचावन्न", 56: "छप्पन्न", 57: "सत्तावन्न", 58: "अठ्ठावन्न", 59: "एकोणसाठ", 60: "साठ",
+        61: "एकसाठ", 62: "बासाठ", 63: "त्रैसाठ", 64: "चौसाठ", 65: "पासष्ठ", 66: "सहासाठ", 67: "सतसाठ", 68: "अडसाठ", 69: "एकोणसत्तर", 70: "सत्तर",
+        71: "एकहत्तर", 72: "बाहत्तर", 73: "त्र्याहत्तर", 74: "चौहत्तर", 75: "पंचहत्तर", 76: "शहात्तर", 77: "सतहत्तर", 78: "अठ्ठहत्तर", 79: "एकोणऐंशी", 80: "ऐंशी",
+        81: "एकऐंशी", 82: "ब्याऐंशी", 83: "त्र्याऐंशी", 84: "चौऱ्याऐंशी", 85: "पंच्याऐंशी", 86: "शहाऐंशी", 87: "सत्त्याऐंशी", 88: "अठ्ठ्याऐंशी", 89: "एकोणनव्वद", 90: "नव्वद",
+        91: "एकनव्वद", 92: "ब्यानव्वद", 93: "त्र्यानव्वद", 94: "चौऱ्यानव्वद", 95: "पंच्यानव्वद", 96: "शहानव्वद", 97: "सत्त्यानव्वद", 98: "अठ्ठ्यानव्वद", 99: "नव्व्यानव्वद"
+    }
+
+    def convert_below_thousand(n):
+        if n == 0:
+            return ""
+        if n < 100:
+            return units.get(n, str(n))
+        h = n // 100
+        rem = n % 100
+        h_str = "एकशे" if h == 1 else f"{units.get(h, '')}शे"
+        rem_str = units.get(rem, str(rem)) if rem > 0 else ""
+        return f"{h_str} {rem_str}".strip()
+
+    parts = []
+    lakh = num // 100000
+    num %= 100000
+    if lakh > 0:
+        parts.append(f"{convert_below_thousand(lakh)} लाख")
+
+    thousand = num // 1000
+    num %= 1000
+    if thousand > 0:
+        parts.append(f"{convert_below_thousand(thousand)} हजार")
+
+    if num > 0:
+        parts.append(convert_below_thousand(num))
+
+    result = " ".join(parts).strip()
+    return f"{result} रुपये फक्त"
+
 import threading
 import subprocess
 
@@ -204,7 +254,14 @@ def get_all_vargani(status=None, search=None):
 def get_vargani_by_receipt_no(receipt_no):
     records = get_all_vargani()
     for r in records:
-        if r.get("receipt_no") == receipt_no:
+        if r.get("receipt_no") == receipt_no or str(r.get("_id")) == str(receipt_no):
+            r["name"] = r.get("name") or "वर्गणीदार भाविक"
+            r["mobile"] = r.get("mobile") or "नमुद नाही"
+            r["address"] = r.get("address") or "नमुद नाही"
+            r["amount"] = r.get("amount", 0)
+            r["amount_in_words"] = amount_to_marathi_words(r.get("amount", 0))
+            r["payment_mode"] = r.get("payment_mode") or "Cash"
+            r["transaction_id"] = r.get("transaction_id") or ("रोख जमा (Cash)" if "Cash" in r.get("payment_mode", "") else "नमुद नाही")
             return r
     return None
 
