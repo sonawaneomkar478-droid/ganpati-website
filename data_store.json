@@ -3,7 +3,7 @@
     "mandal_name": "श्री गणेशोत्सव मित्र मंडळ, पुणे",
     "tagline": "वर्गणी संकलन व ऑनलाईन डिजिटल पावती प्रणाली २०२६",
     "entrance_shloka": "🚩 ॐ गं गणपतये नमः 🚩",
-    "entrance_photo_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=1200&q=80",
+    "entrance_photo_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=600&q=60",
     "upi_id": "mandalganpati@upi",
     "receiver_name": "Shri Ganeshotsav Mandal",
     "phone_number": "7756806580",
@@ -17,40 +17,22 @@
   },
   "gallery": [
     {
-      "_id": "6a9fdc1837c6353028744db6",
+      "_id": "default_1",
       "title": "मागील वर्षातील भव्य श्री गणेश विसर्जन सोहळा २०२५",
-      "image_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=1200&q=80",
+      "image_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=600&q=60",
       "type": "photo",
       "year": "2025",
-      "created_at": "2026-09-08 15:27:44.657000",
+      "created_at": "2026-09-08 15:27:44",
       "display_order": 1
     },
     {
-      "_id": "6a9fdc1837c6353028744db7",
+      "_id": "default_2",
       "title": "श्रींची आकर्षक आरास व महापूजा",
-      "image_url": "https://images.unsplash.com/photo-1567157577867-05ccb1388e66?auto=format&fit=crop&w=1200&q=80",
+      "image_url": "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&w=600&q=60",
       "type": "photo",
       "year": "2025",
-      "created_at": "2026-09-08 15:27:44.657000",
+      "created_at": "2026-09-08 15:27:44",
       "display_order": 2
-    },
-    {
-      "_id": "6a9fdc1837c6353028744db8",
-      "title": "महाआरती व प्रसाद वाटप कार्यक्रम",
-      "image_url": "https://images.unsplash.com/photo-1609102026400-349f257a3e35?auto=format&fit=crop&w=1200&q=80",
-      "type": "photo",
-      "year": "2024",
-      "created_at": "2026-09-08 15:27:44.657000",
-      "display_order": 3
-    },
-    {
-      "_id": "6a9fdcb10ce50a7d2dcc3daa",
-      "title": "omkatr",
-      "image_url": "/static/uploads/slide_1788861617_adipandcard.jpeg",
-      "type": "photo",
-      "year": "2025",
-      "created_at": "2026-09-08 15:30:17.013000",
-      "display_order": 4
     }
   ],
   "vargani_records": [
@@ -67,34 +49,6 @@
       "screenshot_url": "",
       "created_at_str": "10-09-2026 08:44 PM",
       "created_at": "2026-09-10 20:44:17"
-    },
-    {
-      "_id": "6aa2c928306bf7cb409984b4",
-      "receipt_no": "VRG-2026-0013",
-      "name": "राम शर्मा (Test)",
-      "mobile": "9876543210",
-      "address": "",
-      "amount": 501,
-      "payment_mode": "Online UPI",
-      "transaction_id": "UPI123456789",
-      "status": "Pending",
-      "screenshot_url": "",
-      "created_at_str": "10-09-2026 08:43 PM",
-      "created_at": "2026-09-10 20:43:44"
-    },
-    {
-      "_id": "6aa2c38a1ff5afae86af0253",
-      "receipt_no": "VRG-2026-0012",
-      "name": "राम शर्मा (Test)",
-      "mobile": "9876543210",
-      "address": "",
-      "amount": 501,
-      "payment_mode": "Online UPI",
-      "transaction_id": "UPI123456789",
-      "status": "Pending",
-      "screenshot_url": "",
-      "created_at_str": "10-09-2026 08:19 PM",
-      "created_at": "2026-09-10 20:19:46"
     }
   ],
   "users": [
