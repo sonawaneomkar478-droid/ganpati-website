@@ -31,6 +31,7 @@ DEFAULT_GALLERY = [
         "title": "मागील वर्षातील भव्य श्री गणेश विसर्जन सोहळा २०२५",
         "image_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=1200&q=80",
         "type": "photo",
+        "display_order": 1,
         "year": "2025"
     },
     {
@@ -38,6 +39,7 @@ DEFAULT_GALLERY = [
         "title": "श्रींची आकर्षक आरास व महापूजा",
         "image_url": "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&w=1200&q=80",
         "type": "photo",
+        "display_order": 2,
         "year": "2025"
     }
 ]
@@ -119,6 +121,152 @@ def init_db():
         print("Database initialized successfully!")
     except Exception as e:
         print(f"MongoDB Init Info: {e}")
+
+def generate_receipt_no():
+    records = get_all_vargani()
+    count = len(records) + 1
+    receipt_no = f"VRG-2026-{count:04d}"
+    existing_nos = {r.get("receipt_no") for r in records}
+    while receipt_no in existing_nos:
+        count += 1
+        receipt_no = f"VRG-2026-{count:04d}"
+    return receipt_no
+
+def add_vargani(data):
+    rec_id = f"rec_{int(datetime.datetime.now().timestamp())}"
+    now_str = datetime.datetime.now().strftime("%d-%m-%Y %I:%M %p")
+    record = {
+        "_id": rec_id,
+        "receipt_no": generate_receipt_no(),
+        "name": data.get("name", "").strip(),
+        "mobile": data.get("mobile", "").strip(),
+        "address": data.get("address", "").strip(),
+        "amount": int(data.get("amount", 0)),
+        "payment_mode": data.get("payment_mode", "Cash"),
+        "transaction_id": data.get("transaction_id", "").strip(),
+        "status": data.get("status", "Pending"),
+        "screenshot_url": data.get("screenshot_url", ""),
+        "created_at_str": now_str,
+        "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    
+    try:
+        db = get_db()
+        db_rec = record.copy()
+        db_rec["_id"] = ObjectId()
+        res = db.vargani_records.insert_one(db_rec)
+        record["_id"] = str(res.inserted_id)
+    except Exception as e:
+        print(f"MongoDB record insert fail: {e}")
+
+    local_data = load_json_data()
+    v_recs = local_data.get("vargani_records", [])
+    v_recs.insert(0, record)
+    local_data["vargani_records"] = v_recs
+    save_json_data(local_data)
+
+    return record
+
+def get_all_vargani(status=None, search=None):
+    records = []
+    try:
+        db = get_db()
+        query = {}
+        if status and status != "All":
+            query["status"] = status
+        if search:
+            query["$or"] = [
+                {"name": {"$regex": search, "$options": "i"}},
+                {"mobile": {"$regex": search, "$options": "i"}},
+                {"receipt_no": {"$regex": search, "$options": "i"}},
+                {"transaction_id": {"$regex": search, "$options": "i"}}
+            ]
+        m_recs = list(db.vargani_records.find(query).sort("created_at", -1))
+        for r in m_recs:
+            r["_id"] = str(r["_id"])
+            if isinstance(r.get("created_at"), datetime.datetime):
+                r["created_at_str"] = r["created_at"].strftime("%d-%m-%Y %I:%M %p")
+            records.append(r)
+        if records:
+            return records
+    except Exception as e:
+        print(f"MongoDB read all vargani fail: {e}")
+
+    local_data = load_json_data()
+    records = local_data.get("vargani_records", [])
+    if status and status != "All":
+        records = [r for r in records if r.get("status") == status]
+    if search:
+        s = search.lower()
+        records = [r for r in records if s in r.get("name", "").lower() or s in r.get("mobile", "").lower() or s in r.get("receipt_no", "").lower()]
+    return records
+
+def get_vargani_by_receipt_no(receipt_no):
+    records = get_all_vargani()
+    for r in records:
+        if r.get("receipt_no") == receipt_no:
+            return r
+    return None
+
+def verify_vargani(record_id):
+    try:
+        db = get_db()
+        if len(record_id) == 24:
+            db.vargani_records.update_one({"_id": ObjectId(record_id)}, {"$set": {"status": "Verified"}})
+        else:
+            db.vargani_records.update_one({"_id": record_id}, {"$set": {"status": "Verified"}})
+    except Exception as e:
+        print(f"MongoDB verify error: {e}")
+
+    local_data = load_json_data()
+    recs = local_data.get("vargani_records", [])
+    updated_rec = None
+    for r in recs:
+        if str(r.get("_id")) == str(record_id) or r.get("receipt_no") == record_id:
+            r["status"] = "Verified"
+            updated_rec = r
+            break
+    save_json_data(local_data)
+    
+    if not updated_rec:
+        updated_rec = get_vargani_by_receipt_no(record_id)
+        if updated_rec:
+            updated_rec["status"] = "Verified"
+    return updated_rec
+
+def delete_vargani(record_id):
+    try:
+        db = get_db()
+        if len(record_id) == 24:
+            db.vargani_records.delete_one({"_id": ObjectId(record_id)})
+        else:
+            db.vargani_records.delete_one({"_id": record_id})
+    except Exception as e:
+        print(f"MongoDB delete record error: {e}")
+
+    local_data = load_json_data()
+    recs = local_data.get("vargani_records", [])
+    new_recs = [r for r in recs if str(r.get("_id")) != str(record_id) and r.get("receipt_no") != record_id]
+    local_data["vargani_records"] = new_recs
+    save_json_data(local_data)
+    return True
+
+def get_stats():
+    records = get_all_vargani()
+    total_collected = sum(int(r.get("amount", 0)) for r in records if r.get("status") == "Verified")
+    pending_amount = sum(int(r.get("amount", 0)) for r in records if r.get("status") in ["Pending", "Pending Cash"])
+    total_donors = len(records)
+    verified_count = len([r for r in records if r.get("status") == "Verified"])
+    pending_count = len([r for r in records if r.get("status") in ["Pending", "Pending Cash"]])
+    cash_pending_count = len([r for r in records if r.get("status") == "Pending Cash"])
+    return {
+        "total_collected": total_collected,
+        "pending_amount": pending_amount,
+        "total_donors": total_donors,
+        "verified_count": verified_count,
+        "pending_count": pending_count,
+        "cash_pending_count": cash_pending_count
+    }
 
 def get_gallery():
     items = []
@@ -335,7 +483,6 @@ def register_user_login(mobile):
 def get_registered_users():
     unique_users = {}
     
-    # Collect numbers from vargani records
     v_records = get_all_vargani()
     for r in v_records:
         m = r.get("mobile", "").strip()
