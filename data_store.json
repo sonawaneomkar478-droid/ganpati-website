@@ -15,7 +15,44 @@
     "qr_code_url": "/static/images/default_qr.png",
     "address": "गणेश चौक, मुख्य रस्ता, पुणे"
   },
-  "gallery": [],
+  "gallery": [
+    {
+      "_id": "6a9fdc1837c6353028744db6",
+      "title": "मागील वर्षातील भव्य श्री गणेश विसर्जन सोहळा २०२५",
+      "image_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=1200&q=80",
+      "type": "photo",
+      "year": "2025",
+      "created_at": "2026-09-08 15:27:44.657000",
+      "display_order": 1
+    },
+    {
+      "_id": "6a9fdc1837c6353028744db7",
+      "title": "श्रींची आकर्षक आरास व महापूजा",
+      "image_url": "https://images.unsplash.com/photo-1567157577867-05ccb1388e66?auto=format&fit=crop&w=1200&q=80",
+      "type": "photo",
+      "year": "2025",
+      "created_at": "2026-09-08 15:27:44.657000",
+      "display_order": 2
+    },
+    {
+      "_id": "6a9fdc1837c6353028744db8",
+      "title": "महाआरती व प्रसाद वाटप कार्यक्रम",
+      "image_url": "https://images.unsplash.com/photo-1609102026400-349f257a3e35?auto=format&fit=crop&w=1200&q=80",
+      "type": "photo",
+      "year": "2024",
+      "created_at": "2026-09-08 15:27:44.657000",
+      "display_order": 3
+    },
+    {
+      "_id": "6a9fdcb10ce50a7d2dcc3daa",
+      "title": "omkatr",
+      "image_url": "/static/uploads/slide_1788861617_adipandcard.jpeg",
+      "type": "photo",
+      "year": "2025",
+      "created_at": "2026-09-08 15:30:17.013000",
+      "display_order": 4
+    }
+  ],
   "vargani_records": [],
   "users": [
     {
