@@ -57,7 +57,7 @@
                 {% else %}
                     <!-- Auto-Fit Photo Container with Corrupt-Proof Fallback -->
                     <div class="slide-bg-blur" style="background-image: url('{{ item.image_url }}');"></div>
-                    <img src="{{ item.image_url }}" alt="{{ item.title }}" class="slide-img-main" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=1200&q=80';">
+                    <img src="{{ item.image_url }}" alt="{{ item.title }}" class="slide-img-main" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'600\' height=\'400\' viewBox=\'0 0 600 400\'><rect width=\'600\' height=\'400\' fill=\'%23800020\'/><circle cx=\'300\' cy=\'180\' r=\'80\' fill=\'%23ffb703\' opacity=\'0.3\'/><text x=\'300\' y=\'190\' font-family=\'sans-serif\' font-size=\'48\' fill=\'%23ffb703\' text-anchor=\'middle\'>🚩</text><text x=\'300\' y=\'260\' font-family=\'sans-serif\' font-size=\'24\' font-weight=\'bold\' fill=\'%23ffe082\' text-anchor=\'middle\'>श्री गणेशोत्सव मित्र मंडळ</text><text x=\'300\' y=\'295\' font-family=\'sans-serif\' font-size=\'16\' fill=\'%23ffd54f\' text-anchor=\'middle\'>मागील वर्षाच्या आठवणी</text></svg>';">
                 {% endif %}
                 <div class="slide-caption">
                     <h3>🚩 {{ item.title }}</h3>

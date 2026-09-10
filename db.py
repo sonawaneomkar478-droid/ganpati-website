@@ -29,7 +29,7 @@ DEFAULT_GALLERY = [
     {
         "_id": "default_1",
         "title": "मागील वर्षातील भव्य श्री गणेश विसर्जन सोहळा २०२५",
-        "image_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=1200&q=80",
+        "image_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=600&q=60",
         "type": "photo",
         "display_order": 1,
         "year": "2025"
@@ -37,7 +37,7 @@ DEFAULT_GALLERY = [
     {
         "_id": "default_2",
         "title": "श्रींची आकर्षक आरास व महापूजा",
-        "image_url": "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&w=1200&q=80",
+        "image_url": "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&w=600&q=60",
         "type": "photo",
         "display_order": 2,
         "year": "2025"
@@ -339,14 +339,32 @@ def get_gallery():
         local_data = load_json_data()
         items = local_data.get("gallery", [])
 
+    valid_items = []
     for idx, item in enumerate(items):
+        img_url = item.get("image_url", "").strip()
+        if not img_url:
+            continue
+        # Filter out non-existent local upload files
+        if img_url.startswith("/static/uploads/"):
+            filename = img_url.replace("/static/uploads/", "")
+            upload_dir = os.path.join(os.path.dirname(__file__), "static", "uploads")
+            if not os.path.exists(os.path.join(upload_dir, filename)):
+                continue
+        # Filter out broken unsplash test URLs
+        if "photo-1567157577867" in img_url or "photo-1609102026400" in img_url:
+            continue
+
         if "display_order" not in item or item["display_order"] is None:
             item["display_order"] = idx + 1
         if "type" not in item:
             item["type"] = "photo"
+        valid_items.append(item)
 
-    items.sort(key=lambda x: (int(x.get("display_order", 9999)), str(x.get("created_at", ""))))
-    return items
+    if not valid_items:
+        valid_items = DEFAULT_GALLERY.copy()
+
+    valid_items.sort(key=lambda x: (int(x.get("display_order", 9999)), str(x.get("created_at", ""))))
+    return valid_items
 
 def add_gallery_item(title, image_url, media_type="photo", year="2026", mime_type=None, thumbnail_url=None):
     existing_items = get_gallery()
