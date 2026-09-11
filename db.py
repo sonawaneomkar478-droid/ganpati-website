@@ -7,7 +7,13 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 from cloud_storage import delete_cloud_media, generate_video_poster_url
 
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+MONGO_URI = (
+    os.getenv("MONGO_URI") or 
+    os.getenv("MONGODB_URI") or 
+    os.getenv("MONGO_URL") or 
+    os.getenv("DATABASE_URL") or 
+    "mongodb://localhost:27017/"
+)
 DB_NAME = os.getenv("DB_NAME", "vargani_db")
 DATA_FILE = os.path.join(os.path.dirname(__file__), 'data_store.json')
 
@@ -57,30 +63,6 @@ DEFAULT_GALLERY = [
         "mime_type": "video/mp4",
         "display_order": 1,
         "year": "2026"
-    },
-    {
-        "_id": "user_photo_1",
-        "title": "श्री गणपती बाप्पा फोटो",
-        "image_url": "/static/uploads/slide_1788861617_adipandcard.jpeg",
-        "type": "photo",
-        "display_order": 2,
-        "year": "2025"
-    },
-    {
-        "_id": "default_1",
-        "title": "मागील वर्षातील भव्य श्री गणेश विसर्जन सोहळा २०२५",
-        "image_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=600&q=60",
-        "type": "photo",
-        "display_order": 3,
-        "year": "2025"
-    },
-    {
-        "_id": "default_2",
-        "title": "श्रींची आकर्षक आरास व महापूजा",
-        "image_url": "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&w=600&q=60",
-        "type": "photo",
-        "display_order": 4,
-        "year": "2025"
     }
 ]
 
@@ -501,11 +483,8 @@ def get_gallery():
     if not mongo_ok:
         local_data = load_json_data()
         items = local_data.get("gallery", [])
-
-    local_data = load_json_data()
-    # Only load default gallery if user has never modified the gallery
-    if not items and not local_data.get("gallery_user_modified"):
-        items = DEFAULT_GALLERY.copy()
+        if not items and not local_data.get("gallery_user_modified"):
+            items = DEFAULT_GALLERY.copy()
 
     valid_items = []
     for idx, item in enumerate(items):

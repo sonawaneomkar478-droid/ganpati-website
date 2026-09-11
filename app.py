@@ -564,6 +564,18 @@ def list_vargani():
     records = db.get_all_vargani(status=status, search=search)
     return jsonify({'success': True, 'records': records})
 
+@app.route('/api/db-status')
+def db_status():
+    db_obj = db.get_db()
+    is_mongo = db_obj is not None
+    gallery_items = db.get_gallery()
+    return jsonify({
+        'database_type': 'MongoDB Atlas' if is_mongo else 'Local JSON Storage',
+        'is_mongo_connected': is_mongo,
+        'gallery_count': len(gallery_items),
+        'items': [{'id': str(i.get('_id')), 'title': i.get('title'), 'type': i.get('type')} for i in gallery_items]
+    }), 200, {'Cache-Control': 'no-cache, no-store, must-revalidate'}
+
 @app.route('/ping')
 @app.route('/health')
 def ping():
