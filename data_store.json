@@ -49,6 +49,20 @@
   ],
   "vargani_records": [
     {
+      "_id": "6aa3a130c767821699af8320",
+      "receipt_no": "VRG-2026-0025",
+      "name": "राम शर्मा (Test)",
+      "mobile": "9876543210",
+      "address": "",
+      "amount": 501,
+      "payment_mode": "Online UPI",
+      "transaction_id": "UPI123456789",
+      "status": "Pending",
+      "screenshot_url": "",
+      "created_at_str": "11-09-2026 12:05 PM",
+      "created_at": "2026-09-11 12:05:28"
+    },
+    {
       "_id": "6aa3a0bc0a3ae0b7cd0e23c3",
       "receipt_no": "VRG-2026-0024",
       "name": "राम शर्मा (Test)",
