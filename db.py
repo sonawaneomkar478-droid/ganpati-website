@@ -400,6 +400,24 @@ def get_stats():
     set_cached("stats", res)
     return res
 
+import re
+
+def to_youtube_embed_url(url):
+    if not url:
+        return url
+    url_str = str(url).strip()
+    if 'youtube.com' not in url_str and 'youtu.be' not in url_str:
+        return url_str
+
+    if '/embed/' in url_str and 'watch?' not in url_str and 'shorts' not in url_str:
+        return url_str
+
+    m = re.search(r'(?:v=|\/shorts\/|\/embed\/|youtu\.be\/)([a-zA-Z0-9_-]{11})', url_str)
+    if m:
+        video_id = m.group(1)
+        return f"https://www.youtube.com/embed/{video_id}"
+    return url_str
+
 def get_gallery():
     cached_res = get_cached("gallery")
     if cached_res is not None:
@@ -441,6 +459,11 @@ def get_gallery():
         if "photo-1567157577867" in img_url or "photo-1609102026400" in img_url:
             continue
 
+        if "youtube.com" in img_url or "youtu.be" in img_url:
+            img_url = to_youtube_embed_url(img_url)
+            item["image_url"] = img_url
+            item["type"] = "video"
+
         if "display_order" not in item or item["display_order"] is None:
             item["display_order"] = idx + 1
         if "type" not in item:
@@ -456,14 +479,19 @@ def add_gallery_item(title, image_url, media_type="photo", year="2026", mime_typ
     max_order = max([int(i.get("display_order", 0)) for i in existing_items], default=0)
     new_order = max_order + 1
 
+    clean_url = image_url.strip()
+    if "youtube.com" in clean_url or "youtu.be" in clean_url:
+        clean_url = to_youtube_embed_url(clean_url)
+        media_type = "video"
+
     item_id = f"item_{int(datetime.datetime.now().timestamp())}"
     item = {
         "_id": item_id,
         "title": title.strip(),
-        "image_url": image_url.strip(),
+        "image_url": clean_url,
         "type": media_type,
         "mime_type": mime_type or ("video/mp4" if media_type == "video" else "image/jpeg"),
-        "thumbnail_url": thumbnail_url or (image_url if media_type == "photo" else ""),
+        "thumbnail_url": thumbnail_url or (clean_url if media_type == "photo" else ""),
         "display_order": new_order,
         "year": year,
         "is_active": True,
