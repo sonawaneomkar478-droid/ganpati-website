@@ -198,7 +198,8 @@ button:active, .btn-nova-submit:active, .big-village-btn:active, .link-btn:activ
 .slider-arrow {
     position: absolute;
     top: 50%;
-    transform: translateY(-50%);
+    transform: translateY(-50%) translateZ(0);
+    will-change: transform;
     z-index: 10;
     background: linear-gradient(135deg, rgba(216, 67, 21, 0.9), rgba(183, 28, 28, 0.9));
     color: #ffb703;
@@ -219,7 +220,7 @@ button:active, .btn-nova-submit:active, .big-village-btn:active, .link-btn:activ
     background: #ffb703;
     color: #b71c1c;
     border-color: #ffffff;
-    transform: translateY(-50%) scale(1.12);
+    transform: translateY(-50%) scale(1.12) translateZ(0);
     box-shadow: 0 0 18px rgba(255, 183, 3, 0.85);
 }
 
@@ -234,6 +235,8 @@ button:active, .btn-nova-submit:active, .big-village-btn:active, .link-btn:activ
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
+    transform: translateZ(0);
+    will-change: transform;
 }
 
 .big-village-btn {
@@ -252,6 +255,8 @@ button:active, .btn-nova-submit:active, .big-village-btn:active, .link-btn:activ
     justify-content: center;
     position: relative;
     overflow: hidden;
+    transform: translateZ(0);
+    will-change: transform;
 }
 
 .big-village-btn:hover {
