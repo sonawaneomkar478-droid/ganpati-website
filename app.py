@@ -48,6 +48,13 @@ except Exception as e:
 
 ADMIN_MOBILE = "7756806580"
 
+@app.context_processor
+def inject_global_vars():
+    try:
+        return {'settings': db.get_settings()}
+    except Exception:
+        return {'settings': db.DEFAULT_SETTINGS}
+
 @app.before_request
 def before_request_time():
     request._start_time = time.time()
@@ -90,7 +97,7 @@ def serve_upload(filename):
         f.seek(byte1)
         data = f.read(length)
 
-    mime_type = mimetypes.guess_type(path)[0] or 'application/octet-stream'
+    mime_type = mimetypes.guess_type(local_path)[0] or 'application/octet-stream'
     response = Flask.response_class(
         data,
         206,
