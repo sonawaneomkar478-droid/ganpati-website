@@ -195,16 +195,17 @@ def init_db():
     local_data = load_json_data()
     try:
         db = get_db()
-        if db.settings.count_documents({}) == 0:
-            db.settings.insert_one(local_data.get("settings", DEFAULT_SETTINGS.copy()))
-        try:
-            db.gallery.create_index([("display_order", 1)])
-            db.gallery.create_index([("created_at", -1)])
-            db.vargani_records.create_index([("created_at", -1)])
-            db.vargani_records.create_index([("receipt_no", 1)])
-        except Exception as idx_err:
-            print(f"MongoDB Index Info: {idx_err}")
-        print("Database initialized successfully!")
+        if db is not None:
+            if db.settings.count_documents({}) == 0:
+                db.settings.insert_one(local_data.get("settings", DEFAULT_SETTINGS.copy()))
+            try:
+                db.gallery.create_index([("display_order", 1)])
+                db.gallery.create_index([("created_at", -1)])
+                db.vargani_records.create_index([("created_at", -1)])
+                db.vargani_records.create_index([("receipt_no", 1)])
+            except Exception as idx_err:
+                print(f"MongoDB Index Info: {idx_err}")
+            print("Database initialized successfully!")
     except Exception as e:
         print(f"MongoDB Init Info: {e}")
 
