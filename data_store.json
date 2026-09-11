@@ -17,37 +17,33 @@
   },
   "gallery": [
     {
-      "_id": "default_1",
-      "title": "मागील वर्षातील भव्य श्री गणेश विसर्जन सोहळा २०२५",
-      "image_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=600&q=60",
-      "type": "photo",
-      "year": "2025",
-      "created_at": "2026-09-08 15:27:44",
-      "display_order": 1
-    },
-    {
-      "_id": "default_2",
-      "title": "श्रींची आकर्षक आरास व महापूजा",
-      "image_url": "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&w=600&q=60",
-      "type": "photo",
-      "year": "2025",
-      "created_at": "2026-09-08 15:27:44",
-      "display_order": 2
-    },
-    {
       "_id": "6aa3a0d792d230a1e8584c5f",
       "title": "Test Cache Fix",
       "image_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=600&q=60",
       "type": "photo",
       "mime_type": "image/jpeg",
       "thumbnail_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=600&q=60",
-      "display_order": 3,
+      "display_order": 1,
       "year": "2026",
       "is_active": true,
       "created_at": "2026-09-11 12:03:59"
     }
   ],
   "vargani_records": [
+    {
+      "_id": "6aa3ab232d59991ac4a8eb31",
+      "receipt_no": "VRG-2026-0026",
+      "name": "राम शर्मा (Test)",
+      "mobile": "9876543210",
+      "address": "",
+      "amount": 501,
+      "payment_mode": "Online UPI",
+      "transaction_id": "UPI123456789",
+      "status": "Pending",
+      "screenshot_url": "",
+      "created_at_str": "11-09-2026 12:47 PM",
+      "created_at": "2026-09-11 12:47:55"
+    },
     {
       "_id": "6aa3a130c767821699af8320",
       "receipt_no": "VRG-2026-0025",
