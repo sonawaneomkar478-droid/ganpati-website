@@ -3,6 +3,7 @@ import time
 import base64
 import datetime
 import urllib.parse
+import gzip
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
@@ -81,6 +82,20 @@ def add_header(response):
     elif not request.path.startswith('/api/'):
         response.headers['Cache-Control'] = 'no-cache, must-revalidate'
     response.headers['X-Content-Type-Options'] = 'nosniff'
+
+    # GZIP COMPRESSION FOR TEXT RESPONSES (>450 BYTES)
+    accept_encoding = request.headers.get('Accept-Encoding', '')
+    if 'gzip' in accept_encoding and 200 <= response.status_code < 300:
+        if not response.direct_passthrough and not response.is_streamed:
+            content_type = response.headers.get('Content-Type', '')
+            if any(t in content_type for t in ['text/html', 'text/css', 'application/javascript', 'application/json', 'image/svg+xml']):
+                data = response.get_data()
+                if len(data) > 450:
+                    compressed_data = gzip.compress(data, compresslevel=6)
+                    response.set_data(compressed_data)
+                    response.headers['Content-Encoding'] = 'gzip'
+                    response.headers['Content-Length'] = len(compressed_data)
+                    response.headers['Vary'] = 'Accept-Encoding'
     return response
 
 # LOGIN & AUTH ROUTES

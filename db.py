@@ -162,17 +162,28 @@ def save_json_data(data):
     except Exception as e:
         print(f"Error saving data_store.json: {e}")
 
+_CLIENT = None
+
 def get_db():
-    if "mongodb+srv" in MONGO_URI or ("mongodb://" in MONGO_URI and "localhost" not in MONGO_URI):
-        client = MongoClient(
-            MONGO_URI,
-            serverSelectionTimeoutMS=4000,
-            tls=True,
-            tlsAllowInvalidCertificates=True
-        )
-    else:
-        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=200)
-    return client[DB_NAME]
+    global _CLIENT
+    if _CLIENT is None:
+        try:
+            if "mongodb+srv" in MONGO_URI or ("mongodb://" in MONGO_URI and "localhost" not in MONGO_URI):
+                _CLIENT = MongoClient(
+                    MONGO_URI,
+                    serverSelectionTimeoutMS=2500,
+                    connectTimeoutMS=2500,
+                    maxPoolSize=20,
+                    minPoolSize=2,
+                    tls=True,
+                    tlsAllowInvalidCertificates=True
+                )
+            else:
+                _CLIENT = MongoClient(MONGO_URI, serverSelectionTimeoutMS=200, connectTimeoutMS=200)
+        except Exception as e:
+            print(f"MongoClient init exception: {e}")
+            raise e
+    return _CLIENT[DB_NAME]
 
 def init_db():
     local_data = load_json_data()
@@ -339,6 +350,9 @@ def delete_vargani(record_id):
     return True
 
 def get_stats():
+    cached_res = get_cached("stats")
+    if cached_res is not None:
+        return cached_res
     records = get_all_vargani()
     total_collected = sum(int(r.get("amount", 0)) for r in records if r.get("status") == "Verified")
     pending_amount = sum(int(r.get("amount", 0)) for r in records if r.get("status") in ["Pending", "Pending Cash"])
@@ -346,7 +360,7 @@ def get_stats():
     verified_count = len([r for r in records if r.get("status") == "Verified"])
     pending_count = len([r for r in records if r.get("status") in ["Pending", "Pending Cash"]])
     cash_pending_count = len([r for r in records if r.get("status") == "Pending Cash"])
-    return {
+    res = {
         "total_collected": total_collected,
         "pending_amount": pending_amount,
         "total_donors": total_donors,
@@ -354,8 +368,13 @@ def get_stats():
         "pending_count": pending_count,
         "cash_pending_count": cash_pending_count
     }
+    set_cached("stats", res)
+    return res
 
 def get_gallery():
+    cached_res = get_cached("gallery")
+    if cached_res is not None:
+        return cached_res
     items = []
     try:
         db = get_db()
@@ -394,6 +413,7 @@ def get_gallery():
         valid_items = DEFAULT_GALLERY.copy()
 
     valid_items.sort(key=lambda x: (int(x.get("display_order", 9999)), str(x.get("created_at", ""))))
+    set_cached("gallery", valid_items)
     return valid_items
 
 def add_gallery_item(title, image_url, media_type="photo", year="2026", mime_type=None, thumbnail_url=None):
@@ -511,6 +531,11 @@ def delete_gallery_item(item_id):
     return True
 
 def get_settings():
+    cached_res = get_cached("settings")
+    if cached_res is not None:
+        return cached_res
+
+    settings = None
     try:
         db = get_db()
         settings = db.settings.find_one({})
@@ -523,21 +548,31 @@ def get_settings():
             if not settings.get("contact_name3"): settings["contact_name3"] = "खजिनदार (Treasurer)"
             if not settings.get("contact_phone3"): settings["contact_phone3"] = "9822114455"
             if not settings.get("entrance_shloka"): settings["entrance_shloka"] = "🚩 ॐ गं गणपतये नमः 🚩"
-            if "entrance_photo_url" not in settings or not settings["entrance_photo_url"] or "photo-1567157577867" in settings.get("entrance_photo_url", ""):
-                settings["entrance_photo_url"] = "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=1200&q=80"
+            
+            # SANITIZE: Remove bloated inline base64 string (>10,000 chars) to prevent 6.5MB HTML payload
+            photo_url = str(settings.get("entrance_photo_url", "")).strip()
+            if len(photo_url) > 10000 or "photo-1567157577867" in photo_url or not photo_url:
+                settings["entrance_photo_url"] = DEFAULT_SETTINGS["entrance_photo_url"]
+                try:
+                    db.settings.update_one({}, {"$set": {"entrance_photo_url": DEFAULT_SETTINGS["entrance_photo_url"]}})
+                except Exception:
+                    pass
             if "qr_code_url" not in settings or not settings["qr_code_url"]:
                 settings["qr_code_url"] = "/static/images/default_qr.png"
-            return settings
     except Exception as e:
         print(f"MongoDB get_settings error: {e}")
 
-    local_data = load_json_data()
-    st = local_data.get("settings", DEFAULT_SETTINGS.copy())
-    if not st.get("mandal_name"): st["mandal_name"] = DEFAULT_SETTINGS["mandal_name"]
-    if not st.get("tagline"): st["tagline"] = DEFAULT_SETTINGS["tagline"]
-    if "entrance_photo_url" not in st or not st["entrance_photo_url"] or "photo-1567157577867" in st.get("entrance_photo_url", ""):
-        st["entrance_photo_url"] = "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=1200&q=80"
-    return st
+    if not settings:
+        local_data = load_json_data()
+        settings = local_data.get("settings", DEFAULT_SETTINGS.copy())
+        if not settings.get("mandal_name"): settings["mandal_name"] = DEFAULT_SETTINGS["mandal_name"]
+        if not settings.get("tagline"): settings["tagline"] = DEFAULT_SETTINGS["tagline"]
+        photo_url = str(settings.get("entrance_photo_url", "")).strip()
+        if len(photo_url) > 10000 or "photo-1567157577867" in photo_url or not photo_url:
+            settings["entrance_photo_url"] = DEFAULT_SETTINGS["entrance_photo_url"]
+
+    set_cached("settings", settings)
+    return settings
 
 def update_settings(data):
     try:

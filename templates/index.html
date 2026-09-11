@@ -115,7 +115,7 @@
                                 <span style="font-size:3rem;">🎥</span>
                                 <span style="font-size:0.8rem; margin-top:4px;">श्री गणेशोत्सव व्हिडिओ</span>
                             </div>
-                            <video id="slide_vid_{{ loop.index }}" controls playsinline preload="metadata" {% if item.thumbnail_url %}poster="{{ item.thumbnail_url }}" onerror="this.removeAttribute('poster');"{% endif %} class="slide-video-player" style="width:100%; height:100%; object-fit:contain; position:relative; z-index:5; pointer-events:auto; background:transparent;">
+                            <video id="slide_vid_{{ loop.index }}" controls playsinline preload="none" {% if item.thumbnail_url %}poster="{{ item.thumbnail_url }}" onerror="this.removeAttribute('poster');"{% endif %} class="slide-video-player" style="width:100%; height:100%; object-fit:contain; position:relative; z-index:5; pointer-events:auto; background:transparent;">
                                 <source src="{{ item.image_url }}" type="{{ item.mime_type or 'video/mp4' }}">
                                 तुमचा ब्राऊझर व्हिडिओ प्ले करण्यास असमर्थ आहे.
                             </video>
