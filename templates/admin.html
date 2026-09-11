@@ -526,10 +526,64 @@
             });
         }
 
+        // CLIENT-SIDE IMAGE COMPRESSION (HTML5 Canvas WebP)
+        function compressImageClient(file, maxWidth = 1600, quality = 0.82) {
+            return new Promise((resolve) => {
+                if (!file || !file.type.startsWith('image/')) {
+                    return resolve(file);
+                }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let w = img.width;
+                        let h = img.height;
+                        if (w > maxWidth || h > maxWidth) {
+                            if (w > h) {
+                                h = Math.round((h * maxWidth) / w);
+                                w = maxWidth;
+                            } else {
+                                w = Math.round((w * maxWidth) / h);
+                                h = maxWidth;
+                            }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+                        canvas.toBlob((blob) => {
+                            if (blob && blob.size < file.size) {
+                                const cleanName = (file.name || "image").replace(/\.[^/.]+$/, ".webp");
+                                const compressedFile = new File([blob], cleanName, {
+                                    type: 'image/webp',
+                                    lastModified: Date.now()
+                                });
+                                resolve(compressedFile);
+                            } else {
+                                resolve(file);
+                            }
+                        }, 'image/webp', quality);
+                    };
+                    img.onerror = () => resolve(file);
+                    img.src = e.target.result;
+                };
+                reader.onerror = () => resolve(file);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Fetch Cloud Storage Config for Direct Browser-to-Cloud Uploads
+        let globalCloudConfig = { is_configured: false };
+        fetch('/api/cloud-config')
+            .then(r => r.json())
+            .then(d => { if (d.success) globalCloudConfig = d.config; })
+            .catch(() => {});
+
         // Upload Slider Media Form Submit with Real-Time Progress Bar
         const sliderForm = document.getElementById('sliderUploadForm');
         if (sliderForm) {
-            sliderForm.addEventListener('submit', (e) => {
+            sliderForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
                 const submitBtn = document.getElementById('sliderSubmitBtn');
@@ -538,84 +592,267 @@
                 const progressPercent = document.getElementById('sliderProgressPercent');
                 const progressStatus = document.getElementById('sliderProgressStatus');
 
+                const title = document.getElementById('slide_title').value.trim();
+                const year = document.getElementById('slide_year').value.trim() || '2025';
+                const uploadType = document.getElementById('slide_type').value;
+
+                if (!title) {
+                    alert('कृपया शीर्षक / कॅप्शन टाका.');
+                    return;
+                }
+
                 if (submitBtn) {
                     submitBtn.disabled = true;
-                    submitBtn.innerText = '⏳ अपलोड सुरू आहे...';
+                    submitBtn.innerText = '⏳ ऑप्टिमाइझ व अपलोड सुरू आहे...';
                 }
                 if (progressBox) progressBox.style.display = 'block';
                 if (progressBar) progressBar.style.width = '0%';
                 if (progressPercent) progressPercent.innerText = '0%';
+                if (progressStatus) progressStatus.innerText = '⏳ फाईल तयार होत आहे...';
 
-                const formData = new FormData(sliderForm);
-                const xhr = new XMLHttpRequest();
-
-                xhr.upload.addEventListener('progress', (e) => {
-                    if (e.lengthComputable) {
-                        const percent = Math.round((e.loaded / e.total) * 100);
-                        if (progressBar) progressBar.style.width = percent + '%';
-                        if (progressPercent) progressPercent.innerText = percent + '%';
-                        if (progressStatus) {
-                            progressStatus.innerText = percent < 100 ? `⏳ फाईल अपलोड होत आहे... ${percent}%` : `✅ सेव्ह होत आहे, कृपया थांबा...`;
-                        }
-                    }
-                });
-
-                xhr.addEventListener('load', () => {
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.innerText = '➕ स्लाईडर मध्ये जोडा (Upload Now)';
-                    }
-                    try {
-                        const data = JSON.parse(xhr.responseText);
-                        if (data.success) {
-                            if (progressStatus) progressStatus.innerText = '✅ अपलोड यशस्वी झाले!';
-                            alert('✅ स्लाईडर फोटो/व्हिडिओ यशस्वीरित्या अपलोड झाला!');
-                            location.reload();
-                        } else {
+                try {
+                    // Case 1: Photo Upload with Client-Side Auto-Compression
+                    if (uploadType === 'photo') {
+                        const photoInput = document.getElementById('slide_photo');
+                        if (!photoInput.files || !photoInput.files[0]) {
+                            alert('कृपया फोटो फाईल निवडा.');
+                            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = '➕ स्लाईडर मध्ये जोडा (Upload Media)'; }
                             if (progressBox) progressBox.style.display = 'none';
-                            alert('❌ एरर: ' + data.message);
+                            return;
                         }
-                    } catch(err) {
-                        if (progressBox) progressBox.style.display = 'none';
-                        alert('❌ अपलोड रेस्पॉन्स एरर');
-                    }
-                });
 
-                xhr.addEventListener('error', () => {
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.innerText = '➕ स्लाईडर मध्ये जोडा (Upload Now)';
+                        if (progressStatus) progressStatus.innerText = '⚡ फोटो ऑप्टिमाइझ होत आहे (Compressing)...';
+                        const originalFile = photoInput.files[0];
+                        const optimizedPhoto = await compressImageClient(originalFile, 1600, 0.82);
+
+                        // If Cloudinary Direct Upload is Configured
+                        if (globalCloudConfig && globalCloudConfig.is_configured && globalCloudConfig.upload_preset) {
+                            if (progressStatus) progressStatus.innerText = '☁️ क्लाऊड स्टोरेजवर अपलोड होत आहे...';
+                            const cData = new FormData();
+                            cData.append('file', optimizedPhoto);
+                            cData.append('upload_preset', globalCloudConfig.upload_preset);
+
+                            const cXhr = new XMLHttpRequest();
+                            cXhr.upload.addEventListener('progress', (ev) => {
+                                if (ev.lengthComputable) {
+                                    const p = Math.round((ev.loaded / ev.total) * 100);
+                                    if (progressBar) progressBar.style.width = p + '%';
+                                    if (progressPercent) progressPercent.innerText = p + '%';
+                                }
+                            });
+
+                            cXhr.onload = async () => {
+                                if (cXhr.status >= 200 && cXhr.status < 300) {
+                                    const cRes = JSON.parse(cXhr.responseText);
+                                    const saveResp = await fetch('/api/gallery/add-item', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            title: title,
+                                            year: year,
+                                            type: 'photo',
+                                            image_url: cRes.secure_url,
+                                            thumbnail_url: cRes.secure_url,
+                                            public_id: cRes.public_id
+                                        })
+                                    });
+                                    const saveJson = await saveResp.json();
+                                    if (saveJson.success) {
+                                        alert('✅ फोटो क्लाऊड स्टोरेजवर यशस्वीरित्या अपलोड झाला!');
+                                        window.location.href = window.location.pathname + '?_nocache=' + Date.now();
+                                    } else {
+                                        alert('❌ सेव्ह करताना एरर: ' + saveJson.message);
+                                        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = '➕ स्लाईडर मध्ये जोडा (Upload Media)'; }
+                                        if (progressBox) progressBox.style.display = 'none';
+                                    }
+                                } else {
+                                    // Fallback to server upload
+                                    uploadViaServer(optimizedPhoto, null, title, year, 'photo');
+                                }
+                            };
+                            cXhr.onerror = () => uploadViaServer(optimizedPhoto, null, title, year, 'photo');
+                            cXhr.open('POST', `https://api.cloudinary.com/v1_1/${globalCloudConfig.cloud_name}/auto/upload`);
+                            cXhr.send(cData);
+                            return;
+                        } else {
+                            uploadViaServer(optimizedPhoto, null, title, year, 'photo');
+                            return;
+                        }
                     }
+
+                    // Case 2: Video File Upload (Handles Large Files via Direct Cloud or Server)
+                    if (uploadType === 'video_file') {
+                        const videoInput = document.getElementById('slide_video_file');
+                        if (!videoInput.files || !videoInput.files[0]) {
+                            alert('कृपया व्हिडिओ फाईल निवडा.');
+                            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = '➕ स्लाईडर मध्ये जोडा (Upload Media)'; }
+                            if (progressBox) progressBox.style.display = 'none';
+                            return;
+                        }
+                        const videoFile = videoInput.files[0];
+
+                        // Direct Cloud Upload for Large Videos (Bypasses Vercel 4.5MB Serverless Limit!)
+                        if (globalCloudConfig && globalCloudConfig.is_configured && globalCloudConfig.upload_preset) {
+                            if (progressStatus) progressStatus.innerText = '☁️ मोठा व्हिडिओ थेट क्लाऊडवर अपलोड होत आहे...';
+                            const cData = new FormData();
+                            cData.append('file', videoFile);
+                            cData.append('upload_preset', globalCloudConfig.upload_preset);
+
+                            const cXhr = new XMLHttpRequest();
+                            cXhr.upload.addEventListener('progress', (ev) => {
+                                if (ev.lengthComputable) {
+                                    const p = Math.round((ev.loaded / ev.total) * 100);
+                                    if (progressBar) progressBar.style.width = p + '%';
+                                    if (progressPercent) progressPercent.innerText = p + '%';
+                                    if (progressStatus) progressStatus.innerText = `⏳ व्हिडिओ क्लाऊड अपलोड: ${p}%`;
+                                }
+                            });
+
+                            cXhr.onload = async () => {
+                                if (cXhr.status >= 200 && cXhr.status < 300) {
+                                    const cRes = JSON.parse(cXhr.responseText);
+                                    const posterUrl = cRes.secure_url.replace('/video/upload/', '/video/upload/so_0,w_800,c_limit,q_auto,f_jpg/').replace(/\.[^/.]+$/, ".jpg");
+                                    const saveResp = await fetch('/api/gallery/add-item', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            title: title,
+                                            year: year,
+                                            type: 'video',
+                                            image_url: cRes.secure_url,
+                                            thumbnail_url: posterUrl,
+                                            public_id: cRes.public_id,
+                                            mime_type: 'video/mp4'
+                                        })
+                                    });
+                                    const saveJson = await saveResp.json();
+                                    if (saveJson.success) {
+                                        alert('✅ मोठा व्हिडिओ क्लाऊड CDN वर यशस्वीरित्या अपलोड झाला!');
+                                        window.location.href = window.location.pathname + '?_nocache=' + Date.now();
+                                    } else {
+                                        alert('❌ सेव्ह एरर: ' + saveJson.message);
+                                        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = '➕ स्लाईडर मध्ये जोडा (Upload Media)'; }
+                                        if (progressBox) progressBox.style.display = 'none';
+                                    }
+                                } else {
+                                    uploadViaServer(null, videoFile, title, year, 'video_file');
+                                }
+                            };
+                            cXhr.onerror = () => uploadViaServer(null, videoFile, title, year, 'video_file');
+                            cXhr.open('POST', `https://api.cloudinary.com/v1_1/${globalCloudConfig.cloud_name}/video/upload`);
+                            cXhr.send(cData);
+                            return;
+                        } else {
+                            uploadViaServer(null, videoFile, title, year, 'video_file');
+                            return;
+                        }
+                    }
+
+                    // Case 3: YouTube Link
+                    if (uploadType === 'video') {
+                        const videoUrl = document.getElementById('slide_video_url').value.trim();
+                        if (!videoUrl) {
+                            alert('कृपया यूट्यूब व्हिडिओ लिंक टाका.');
+                            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = '➕ स्लाईडर मध्ये जोडा (Upload Media)'; }
+                            if (progressBox) progressBox.style.display = 'none';
+                            return;
+                        }
+                        uploadViaServer(null, null, title, year, 'video', videoUrl);
+                        return;
+                    }
+                } catch (uploadErr) {
+                    alert('❌ अपलोड करताना त्रुटी आली: ' + uploadErr.message);
+                    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = '➕ स्लाईडर मध्ये जोडा (Upload Media)'; }
                     if (progressBox) progressBox.style.display = 'none';
-                    alert('❌ नेटवर्क एरर! फाईल अपलोड अपूर्ण राहिले.');
-                });
+                }
 
-                xhr.open('POST', '/api/gallery/upload');
-                xhr.send(formData);
+                function uploadViaServer(photoBlob, videoBlob, mTitle, mYear, mType, yUrl = "") {
+                    const sFormData = new FormData();
+                    sFormData.append('title', mTitle);
+                    sFormData.append('year', mYear);
+                    sFormData.append('type', mType);
+                    if (photoBlob) sFormData.append('photo', photoBlob);
+                    if (videoBlob) sFormData.append('video_file', videoBlob);
+                    if (yUrl) sFormData.append('video_url', yUrl);
+
+                    const sXhr = new XMLHttpRequest();
+                    sXhr.upload.addEventListener('progress', (e) => {
+                        if (e.lengthComputable) {
+                            const percent = Math.round((e.loaded / e.total) * 100);
+                            if (progressBar) progressBar.style.width = percent + '%';
+                            if (progressPercent) progressPercent.innerText = percent + '%';
+                            if (progressStatus) {
+                                progressStatus.innerText = percent < 100 ? `⏳ फाईल अपलोड होत आहे... ${percent}%` : `✅ सेव्ह होत आहे, कृपया थांबा...`;
+                            }
+                        }
+                    });
+
+                    sXhr.addEventListener('load', () => {
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerText = '➕ स्लाईडर मध्ये जोडा (Upload Media)';
+                        }
+                        try {
+                            const data = JSON.parse(sXhr.responseText);
+                            if (data.success) {
+                                if (progressStatus) progressStatus.innerText = '✅ अपलोड यशस्वी झाले!';
+                                alert('✅ स्लाईडर फोटो/व्हिडिओ यशस्वीरित्या जोडला गेला!');
+                                window.location.href = window.location.pathname + '?_nocache=' + Date.now();
+                            } else {
+                                if (progressBox) progressBox.style.display = 'none';
+                                alert('❌ एरर: ' + data.message);
+                            }
+                        } catch(err) {
+                            if (progressBox) progressBox.style.display = 'none';
+                            alert('❌ अपलोड रेस्पॉन्स एरर: Vercel 4.5MB लिमिट ओलांडली असू शकते. कृपया लहान फाईल वापरा किंवा YouTube लिंक वापरा.');
+                        }
+                    });
+
+                    sXhr.addEventListener('error', () => {
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerText = '➕ स्लाईडर मध्ये जोडा (Upload Media)';
+                        }
+                        if (progressBox) progressBox.style.display = 'none';
+                        alert('❌ नेटवर्क एरर! फाईल अपलोड अपूर्ण राहिले.');
+                    });
+
+                    sXhr.open('POST', '/api/gallery/upload');
+                    sXhr.send(sFormData);
+                }
             });
         }
 
-        // Instant Delete Slider Media (Zero Page Reload)
+        // Instant Permanent Delete Slider Media (Zero Stale Cache)
         async function deleteSliderItem(id, btn) {
-            if (!confirm('नक्की हा स्लाईडर फोटो/व्हिडिओ हटवायचा आहे का?')) return;
+            if (!confirm('नक्की हा स्लाईडर फोटो/व्हिडिओ कायमस्वरूपी हटवायचा आहे का? (Permanent Delete)')) return;
             const card = btn ? btn.closest('.media-order-card') : null;
             if (card) {
                 card.style.opacity = '0.2';
                 card.style.pointerEvents = 'none';
             }
             try {
-                const res = await fetch(`/api/gallery/delete/${id}`, { method: 'DELETE' });
+                const res = await fetch(`/api/gallery/delete/${id}?_t=${Date.now()}`, { 
+                    method: 'DELETE',
+                    headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+                });
                 const data = await res.json();
                 if (data.success) {
                     if (card) card.remove();
                     updateMediaSequenceBadges();
+                    // Alert confirmation
+                    const toast = document.createElement('div');
+                    toast.innerText = '✅ स्लाईडर मीडिया कायमस्वरूपी डिलीट केला (Permanently Deleted)!';
+                    toast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#059669;color:#fff;padding:12px 20px;border-radius:10px;font-weight:700;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,0.3);';
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
                 } else {
                     if (card) { card.style.opacity = '1'; card.style.pointerEvents = 'auto'; }
                     alert('❌ एरर: ' + data.message);
                 }
             } catch(e) {
                 if (card) { card.style.opacity = '1'; card.style.pointerEvents = 'auto'; }
-                alert('❌ नेटवर्क एरर');
+                alert('❌ नेटवर्क एरर! डिलीट करता आले नाही.');
             }
         }
 

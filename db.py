@@ -2,8 +2,10 @@ import os
 import json
 import datetime
 import tempfile
+import time
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+from cloud_storage import delete_cloud_media, generate_video_poster_url
 
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
 DB_NAME = os.getenv("DB_NAME", "vargani_db")
@@ -11,6 +13,7 @@ DATA_FILE = os.path.join(os.path.dirname(__file__), 'data_store.json')
 
 _CACHE = {}
 _CACHE_TTL = 300  # 5 minutes TTL
+_MONGO_CHECK_FAILED_UNTIL = 0
 
 def get_cached(key):
     if key in _CACHE:
@@ -222,7 +225,14 @@ _CLIENT = None
 _DB_INITIALIZED = False
 
 def get_db():
-    global _CLIENT
+    global _CLIENT, _MONGO_CHECK_FAILED_UNTIL
+    # On Vercel / serverless without remote URI, avoid localhost connection attempts completely
+    if (os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME")) and ("localhost" in MONGO_URI or "127.0.0.1" in MONGO_URI):
+        return None
+
+    if time.time() < _MONGO_CHECK_FAILED_UNTIL:
+        return None
+
     if _CLIENT is None:
         try:
             if "mongodb+srv" in MONGO_URI or ("mongodb://" in MONGO_URI and "localhost" not in MONGO_URI):
@@ -240,11 +250,13 @@ def get_db():
             else:
                 _CLIENT = MongoClient(MONGO_URI, serverSelectionTimeoutMS=200, connectTimeoutMS=200)
         except Exception as e:
+            _MONGO_CHECK_FAILED_UNTIL = time.time() + 60
             print(f"MongoClient init exception: {e}")
             return None
     try:
         return _CLIENT[DB_NAME]
     except Exception as e:
+        _MONGO_CHECK_FAILED_UNTIL = time.time() + 60
         print(f"MongoDB DB access exception: {e}")
         return None
 
@@ -491,16 +503,20 @@ def get_gallery():
         items = local_data.get("gallery", [])
 
     local_data = load_json_data()
+    # Only load default gallery if user has never modified the gallery
     if not items and not local_data.get("gallery_user_modified"):
         items = DEFAULT_GALLERY.copy()
 
-    import tempfile
     valid_items = []
     for idx, item in enumerate(items):
         if not item or not isinstance(item, dict):
             continue
-        img_url = item.get("image_url", "").strip()
+        img_url = str(item.get("image_url", "")).strip()
         if not img_url:
+            continue
+
+        # SANITIZATION: Eliminate giant inline Base64 (>5000 chars) that bloat payloads
+        if img_url.startswith("data:") and len(img_url) > 5000:
             continue
 
         # Check static uploads existence ONLY when running locally (not on Vercel/serverless)
@@ -523,6 +539,10 @@ def get_gallery():
             img_url = to_youtube_embed_url(img_url)
             item["image_url"] = img_url
             item["type"] = "video"
+            if not item.get("thumbnail_url"):
+                item["thumbnail_url"] = generate_video_poster_url(img_url)
+        elif item.get("type") == "video" and not item.get("thumbnail_url"):
+            item["thumbnail_url"] = generate_video_poster_url(img_url)
 
         if "display_order" not in item or item["display_order"] is None:
             item["display_order"] = idx + 1
@@ -534,8 +554,12 @@ def get_gallery():
     set_cached("gallery", valid_items)
     return valid_items
 
-def add_gallery_item(title, image_url, media_type="photo", year="2025", mime_type="image/jpeg", thumbnail_url=""):
+def add_gallery_item(title, image_url, media_type="photo", year="2025", mime_type="image/jpeg", thumbnail_url="", public_id=""):
     item_id = f"item_{int(datetime.datetime.now().timestamp())}"
+    
+    if media_type == "video" and not thumbnail_url:
+        thumbnail_url = generate_video_poster_url(image_url)
+
     item = {
         "_id": item_id,
         "title": title.strip(),
@@ -543,7 +567,8 @@ def add_gallery_item(title, image_url, media_type="photo", year="2025", mime_typ
         "type": media_type,
         "mime_type": mime_type,
         "thumbnail_url": thumbnail_url.strip() if thumbnail_url else image_url.strip(),
-        "year": year,
+        "public_id": public_id.strip() if public_id else "",
+        "year": str(year).strip() or "2025",
         "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
@@ -616,7 +641,52 @@ def reorder_gallery_items(ordered_ids):
     return reordered_list
 
 def delete_gallery_item(item_id):
+    """
+    PERMANENT DELETION:
+    1. Removes media from Cloudinary (if cloud-hosted).
+    2. Physically unlinks file & thumbnail from disk (if locally stored).
+    3. Deletes record from MongoDB and data_store.json.
+    4. Re-indexes display_order so sequence never breaks.
+    5. Invalidates cache immediately.
+    """
     item_id_str = str(item_id).strip()
+
+    # Find the target item to retrieve its URLs
+    existing_items = get_gallery()
+    target_item = next((item for item in existing_items if str(item.get("_id")).strip() == item_id_str), None)
+
+    if target_item:
+        img_url = target_item.get("image_url", "")
+        thumb_url = target_item.get("thumbnail_url", "")
+        pub_id = target_item.get("public_id", "")
+        m_type = target_item.get("type", "photo")
+        res_type = "video" if m_type == "video" else "image"
+
+        # 1. Cloud Deletion (Cloudinary)
+        if pub_id or "res.cloudinary.com" in img_url:
+            target_to_delete = pub_id if pub_id else img_url
+            try:
+                delete_cloud_media(target_to_delete, resource_type=res_type)
+            except Exception as c_err:
+                print(f"Cloud delete error: {c_err}")
+
+        # 2. Local Disk Physical Unlink
+        for media_link in [img_url, thumb_url]:
+            if media_link and media_link.startswith("/static/uploads/"):
+                fname = os.path.basename(media_link)
+                for folder in [
+                    os.path.join(os.path.dirname(__file__), "static", "uploads"),
+                    os.path.join(tempfile.gettempdir(), "uploads")
+                ]:
+                    fpath = os.path.join(folder, fname)
+                    if os.path.exists(fpath):
+                        try:
+                            os.remove(fpath)
+                            print(f"🗑️ Physically deleted file from disk: {fpath}")
+                        except Exception as rm_err:
+                            print(f"Warning unlinking file {fpath}: {rm_err}")
+
+    # 3. Database Deletion (MongoDB)
     try:
         db = get_db()
         if db is not None:
@@ -629,10 +699,12 @@ def delete_gallery_item(item_id):
     except Exception as e:
         print(f"MongoDB delete_gallery_item error: {e}")
 
+    # 4. JSON Storage Deletion
     local_data = load_json_data()
     gallery = local_data.get("gallery", [])
     new_gallery = [g for g in gallery if str(g.get("_id")).strip() != item_id_str]
     
+    # 5. Re-index Display Orders
     for idx, item in enumerate(new_gallery):
         item["display_order"] = idx + 1
         try:

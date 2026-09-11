@@ -10,8 +10,8 @@ from werkzeug.utils import secure_filename
 import re
 import mimetypes
 import db
-
 import tempfile
+from cloud_storage import get_cloud_config, delete_cloud_media, generate_video_poster_url, is_cloudinary_configured
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'ganpati_bappa_morya_vargani_2026_secret_key'
@@ -143,7 +143,7 @@ def add_header(response):
 
     if hasattr(request, '_start_time'):
         duration = time.time() - request._start_time
-        print(f"⚡ [PERF] {request.method} {request.path} -> {response.status_code} ({duration:.3f}s)")
+        print(f"[PERF] {request.method} {request.path} -> {response.status_code} ({duration:.3f}s)")
     return response
 
 # LOGIN & AUTH ROUTES
@@ -363,11 +363,6 @@ def save_uploaded_media(file_obj, prefix="media"):
             except Exception as write_err:
                 print(f"File write warning: {write_err}")
 
-            if not is_writable or os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
-                if len(compressed_data) < 400 * 1024:
-                    b64_str = base64.b64encode(compressed_data).decode('utf-8')
-                    return f"data:image/webp;base64,{b64_str}"
-
             return f"/static/uploads/{filename}"
         except Exception as p_err:
             print(f"Pillow image compression info: {p_err}")
@@ -380,6 +375,39 @@ def save_uploaded_media(file_obj, prefix="media"):
     file_obj.save(filepath)
 
     return f"/static/uploads/{filename}"
+
+# API: CLOUD STORAGE CONFIG
+@app.route('/api/cloud-config', methods=['GET'])
+def cloud_config():
+    resp = jsonify({'success': True, 'config': get_cloud_config()})
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    return resp
+
+# API: ADD GALLERY ITEM DIRECTLY (FROM CLOUD OR URL)
+@app.route('/api/gallery/add-item', methods=['POST'])
+def add_gallery_item_direct():
+    if 'user' not in session or session.get('role') != 'admin':
+        return jsonify({'success': False, 'message': 'अनधिकृत प्रवेश (Unauthorized Access)'}), 403
+
+    try:
+        data = request.get_json() or request.form
+        title = data.get('title', 'गणेशोत्सव आठवणी').strip()
+        year = str(data.get('year', '2025')).strip() or '2025'
+        image_url = data.get('image_url', '').strip()
+        media_type = data.get('type', 'photo')
+        thumbnail_url = data.get('thumbnail_url', '').strip()
+        public_id = data.get('public_id', '').strip()
+        mime_type = data.get('mime_type', 'image/jpeg' if media_type == 'photo' else 'video/mp4')
+
+        if not image_url:
+            return jsonify({'success': False, 'message': 'मीडिया URL आवश्यक आहे.'}), 400
+
+        item = db.add_gallery_item(title, image_url, media_type=media_type, year=year, mime_type=mime_type, thumbnail_url=thumbnail_url, public_id=public_id)
+        resp = jsonify({'success': True, 'message': 'स्लाईडर मीडिया यशस्वीरित्या जोडला गेला!', 'item': item})
+        resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        return resp
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 # API: GALLERY / SLIDER UPLOAD (PHOTO OR LOCAL VIDEO FILE OR YOUTUBE LINK)
 @app.route('/api/gallery/upload', methods=['POST'])
@@ -438,7 +466,9 @@ def upload_gallery():
             return jsonify({'success': False, 'message': 'कृपया संगणकामधील/मोबाईलमधील फोटो/व्हिडिओ फाईल निवडा किंवा यूट्यूब लिंक टाका.'}), 400
 
         item = db.add_gallery_item(title, image_url, media_type=media_type, year=year, mime_type=mime_type, thumbnail_url=thumbnail_url)
-        return jsonify({'success': True, 'message': 'स्लाईडर फोटो/व्हिडिओ यशस्वीरित्या जोडला गेला!', 'item': item})
+        resp = jsonify({'success': True, 'message': 'स्लाईडर फोटो/व्हिडिओ यशस्वीरित्या जोडला गेला!', 'item': item})
+        resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        return resp
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
@@ -455,11 +485,13 @@ def reorder_gallery():
             return jsonify({'success': False, 'message': 'वैध आयडी लिस्ट पाठवणे आवश्यक आहे.'}), 400
 
         reordered = db.reorder_gallery_items(ordered_ids)
-        return jsonify({
+        resp = jsonify({
             'success': True,
             'message': 'स्लाईडर मीडियाचा क्रम (Sequence) यशस्वीरीत्या सेव्ह झाला!',
             'gallery': reordered
         })
+        resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        return resp
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
@@ -470,7 +502,9 @@ def delete_gallery_item(item_id):
 
     try:
         db.delete_gallery_item(item_id)
-        return jsonify({'success': True, 'message': 'स्लाईडर मीडिया डिलीट केला.'})
+        resp = jsonify({'success': True, 'message': 'स्लाईडर मीडिया कायमस्वरूपी डिलीट केला.'})
+        resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        return resp
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
