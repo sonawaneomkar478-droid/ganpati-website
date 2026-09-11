@@ -17,46 +17,15 @@
   },
   "gallery": [
     {
-      "_id": "6aa419122295faf6a274485e",
-      "title": "Flask Test Photo",
-      "image_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=600&q=60",
-      "type": "photo",
-      "mime_type": "image/jpeg",
-      "thumbnail_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=600&q=60",
-      "public_id": "",
-      "year": "2026",
-      "created_at": "2026-09-11 20:36:58",
-      "display_order": 1
-    },
-    {
       "_id": "user_vid_1",
       "title": "गणेशोत्सव विसर्जन मिरवणूक व्हिडिओ २०२६",
       "image_url": "/static/uploads/vid_1788933034_WhatsApp_Video_2026-09-09_at_11.15.45_AM.mp4",
       "type": "video",
       "mime_type": "video/mp4",
-      "display_order": 2,
+      "display_order": 1,
       "year": "2026",
       "is_active": true,
       "created_at": "2026-09-09 11:15:45"
-    },
-    {
-      "_id": "user_photo_1",
-      "title": "श्री गणपती बाप्पा फोटो",
-      "image_url": "/static/uploads/slide_1788861617_adipandcard.jpeg",
-      "type": "photo",
-      "mime_type": "image/jpeg",
-      "display_order": 3,
-      "year": "2025",
-      "is_active": true,
-      "created_at": "2026-09-08 15:30:17"
-    },
-    {
-      "_id": "default_1",
-      "title": "मागील वर्षातील भव्य श्री गणेश विसर्जन सोहळा २०२५",
-      "image_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=600&q=60",
-      "type": "photo",
-      "display_order": 4,
-      "year": "2025"
     }
   ],
   "vargani_records": [
