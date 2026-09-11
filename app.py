@@ -277,6 +277,32 @@ def delete_record(record_id):
         return jsonify({'success': False, 'message': str(e)}), 500
 
 # API: GALLERY / SLIDER UPLOAD (PHOTO OR LOCAL VIDEO FILE OR YOUTUBE LINK)
+def save_uploaded_media(file_obj, prefix="media"):
+    if not file_obj or not file_obj.filename or not allowed_file(file_obj.filename):
+        return None
+    raw_name = file_obj.filename.rsplit('.', 1)[0] if '.' in file_obj.filename else "file"
+    safe_name = secure_filename(raw_name) or "file"
+    ext = file_obj.filename.rsplit('.', 1)[1].lower() if '.' in file_obj.filename else 'jpg'
+    filename = f"{prefix}_{int(time.time())}_{safe_name}.{ext}"
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    # Stream write directly to disk with 0 RAM footprint
+    file_obj.save(filepath)
+
+    # Optimize and compress images with Pillow if available
+    if ext in {'jpg', 'jpeg', 'png', 'webp'}:
+        try:
+            from PIL import Image
+            with Image.open(filepath) as img:
+                img = img.convert('RGB')
+                img.thumbnail((1600, 1600), Image.Resampling.LANCZOS)
+                img.save(filepath, 'JPEG', quality=82, optimize=True)
+        except Exception as p_err:
+            print(f"Pillow optimization info: {p_err}")
+
+    return f"/static/uploads/{filename}"
+
+# API: GALLERY / SLIDER UPLOAD (PHOTO OR LOCAL VIDEO FILE OR YOUTUBE LINK)
 @app.route('/api/gallery/upload', methods=['POST'])
 def upload_gallery():
     if 'user' not in session or session.get('role') != 'admin':
@@ -293,61 +319,24 @@ def upload_gallery():
         mime_type = "image/jpeg"
         thumbnail_url = ""
 
-        cloudinary_cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME", "")
-        cloudinary_preset = os.getenv("CLOUDINARY_UPLOAD_PRESET", "unsigned_preset")
-
-        # Case 1: Video file uploaded from local folder / phone (up to 100 MB)
+        # Case 1: Video file uploaded
         if 'video_file' in request.files and request.files['video_file'].filename:
             file = request.files['video_file']
-            if file and allowed_file(file.filename):
-                mime_type = file.mimetype or "video/mp4"
-                file_bytes = file.read()
-                file_size = len(file_bytes)
-
-                if file_size > 100 * 1024 * 1024:
-                    return jsonify({'success': False, 'message': '⚠️ व्हिडिओ फाईलची साईझ १००MB पेक्षा जास्त असू नये.'}), 400
-
-                raw_name = file.filename.rsplit('.', 1)[0] if '.' in file.filename else "video"
-                safe_name = secure_filename(raw_name) or "video"
-                ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'mp4'
-                filename = f"vid_{int(datetime.datetime.now().timestamp())}_{safe_name}.{ext}"
-
-                # If Cloudinary cloud configuration exists, upload directly to Cloudinary
-                if cloudinary_cloud_name:
-                    try:
-                        import urllib.request, urllib.parse, json as json_lib
-                        c_url = f"https://api.cloudinary.com/v1_1/{cloudinary_cloud_name}/video/upload"
-                        fields = {'upload_preset': cloudinary_preset}
-                        # Send multipart/form-data request
-                    except Exception as c_err:
-                        print(f"Cloudinary upload info: {c_err}")
-
-                # Ephemeral/Static fallback + Base64 inline stream for small videos
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                with open(filepath, 'wb') as f:
-                    f.write(file_bytes)
-
-                if file_size <= 15 * 1024 * 1024:
-                    encoded = base64.b64encode(file_bytes).decode('utf-8')
-                    image_url = f"data:{mime_type};base64,{encoded}"
-                else:
-                    image_url = f"/static/uploads/{filename}"
-
+            saved_path = save_uploaded_media(file, prefix="vid")
+            if saved_path:
+                image_url = saved_path
                 media_type = "video"
-                thumbnail_url = ""
+                mime_type = file.mimetype or "video/mp4"
 
-        # Case 2: Photo file uploaded from local folder / phone
+        # Case 2: Photo file uploaded
         elif 'photo' in request.files and request.files['photo'].filename:
             file = request.files['photo']
-            if file and allowed_file(file.filename):
-                mime_type = file.mimetype or "image/jpeg"
-                file_bytes = file.read()
-                if len(file_bytes) > 20 * 1024 * 1024:
-                    return jsonify({'success': False, 'message': '⚠️ फोटो फाईलची साईझ २०MB पेक्षा जास्त असू नये.'}), 400
-                encoded = base64.b64encode(file_bytes).decode('utf-8')
-                image_url = f"data:{mime_type};base64,{encoded}"
+            saved_path = save_uploaded_media(file, prefix="img")
+            if saved_path:
+                image_url = saved_path
                 media_type = "photo"
-                thumbnail_url = image_url
+                mime_type = file.mimetype or "image/jpeg"
+                thumbnail_url = saved_path
 
         # Case 3: External YouTube Video Link
         elif video_url:
@@ -437,21 +426,15 @@ def manage_settings():
                 'contact_phone3': contact_phone3
             }
 
-            if 'qr_code' in request.files:
-                file = request.files['qr_code']
-                if file and allowed_file(file.filename):
-                    mime_type = file.mimetype or "image/jpeg"
-                    file_bytes = file.read()
-                    encoded = base64.b64encode(file_bytes).decode('utf-8')
-                    update_data['qr_code_url'] = f"data:{mime_type};base64,{encoded}"
+            if 'qr_code' in request.files and request.files['qr_code'].filename:
+                saved_qr = save_uploaded_media(request.files['qr_code'], prefix="qr")
+                if saved_qr:
+                    update_data['qr_code_url'] = saved_qr
 
-            if 'entrance_photo' in request.files:
-                file = request.files['entrance_photo']
-                if file and allowed_file(file.filename):
-                    mime_type = file.mimetype or "image/jpeg"
-                    file_bytes = file.read()
-                    encoded = base64.b64encode(file_bytes).decode('utf-8')
-                    update_data['entrance_photo_url'] = f"data:{mime_type};base64,{encoded}"
+            if 'entrance_photo' in request.files and request.files['entrance_photo'].filename:
+                saved_ent = save_uploaded_media(request.files['entrance_photo'], prefix="entrance")
+                if saved_ent:
+                    update_data['entrance_photo_url'] = saved_ent
 
             updated = db.update_settings(update_data)
             return jsonify({'success': True, 'message': 'मंडळ माहिती, प्रवेशद्वार फोटो व QR Code अपडेट झाला!', 'settings': updated})

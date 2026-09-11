@@ -184,8 +184,12 @@ def get_db():
                 _CLIENT = MongoClient(MONGO_URI, serverSelectionTimeoutMS=200, connectTimeoutMS=200)
         except Exception as e:
             print(f"MongoClient init exception: {e}")
-            raise e
-    return _CLIENT[DB_NAME]
+            return None
+    try:
+        return _CLIENT[DB_NAME]
+    except Exception as e:
+        print(f"MongoDB DB access exception: {e}")
+        return None
 
 def init_db():
     local_data = load_json_data()
