@@ -155,16 +155,50 @@ def trigger_github_sync():
     t = threading.Thread(target=_bg_github_sync, daemon=True)
     t.start()
 
-def load_json_data():
-    if os.path.exists(DATA_FILE):
+def get_target_data_file():
+    local_file = os.path.join(os.path.dirname(__file__), 'data_store.json')
+    tmp_file = os.path.join(tempfile.gettempdir(), 'data_store.json')
+
+    try:
+        if os.path.exists(local_file):
+            with open(local_file, 'a', encoding='utf-8'):
+                pass
+            return local_file
+    except (OSError, IOError):
+        pass
+
+    if not os.path.exists(tmp_file) and os.path.exists(local_file):
         try:
-            with open(DATA_FILE, 'r', encoding='utf-8') as f:
+            with open(local_file, 'r', encoding='utf-8') as rf:
+                content = rf.read()
+            with open(tmp_file, 'w', encoding='utf-8') as wf:
+                wf.write(content)
+        except Exception as copy_err:
+            print(f"Copy data_store.json to tmp warning: {copy_err}")
+
+    return tmp_file if os.path.exists(tmp_file) or not os.path.exists(local_file) else local_file
+
+def load_json_data():
+    target_file = get_target_data_file()
+    if os.path.exists(target_file):
+        try:
+            with open(target_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 if data and isinstance(data, dict):
                     return data
         except Exception as e:
-            print(f"Error reading data_store.json: {e}")
-    
+            print(f"Error reading {target_file}: {e}")
+
+    local_file = os.path.join(os.path.dirname(__file__), 'data_store.json')
+    if os.path.exists(local_file):
+        try:
+            with open(local_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                if data and isinstance(data, dict):
+                    return data
+        except Exception as e:
+            print(f"Error reading local data_store.json: {e}")
+
     init_data = {
         "settings": DEFAULT_SETTINGS.copy(),
         "gallery": DEFAULT_GALLERY.copy(),
@@ -174,10 +208,12 @@ def load_json_data():
     return init_data
 
 def save_json_data(data):
+    target_file = get_target_data_file()
     try:
-        with open(DATA_FILE, 'w', encoding='utf-8') as f:
+        with open(target_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2, default=str)
-        trigger_github_sync()
+        if target_file == os.path.join(os.path.dirname(__file__), 'data_store.json'):
+            trigger_github_sync()
     except Exception as e:
         print(f"Error saving data_store.json: {e}")
 
@@ -522,7 +558,9 @@ def add_gallery_item(title, image_url, media_type="photo", year="2025", mime_typ
 
     local_data = load_json_data()
     gallery = local_data.get("gallery", [])
-    gallery.append(item)
+    gallery.insert(0, item)
+    for idx, g in enumerate(gallery):
+        g["display_order"] = idx + 1
     local_data["gallery"] = gallery
     local_data["gallery_user_modified"] = True
     save_json_data(local_data)
