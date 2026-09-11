@@ -79,6 +79,14 @@ def serve_upload(filename):
     response.headers.add('Cache-Control', 'public, max-age=31536000')
     return response
 
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    static_dir = os.path.join(app.root_path, 'static')
+    file_path = os.path.join(static_dir, filename)
+    if os.path.exists(file_path):
+        return send_from_directory(static_dir, filename)
+    return "Static file not found", 404
+
 @app.after_request
 def add_header(response):
     if request.path.startswith('/static/'):
