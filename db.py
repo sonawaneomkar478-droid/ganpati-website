@@ -441,10 +441,11 @@ def get_gallery():
     mongo_ok = False
     try:
         db = get_db()
-        items = list(db.gallery.find({}))
-        for item in items:
-            item["_id"] = str(item["_id"])
-        mongo_ok = True
+        if db is not None:
+            items = list(db.gallery.find({}))
+            for item in items:
+                item["_id"] = str(item["_id"])
+            mongo_ok = True
     except Exception as e:
         print(f"MongoDB get_gallery info: {e}")
 
@@ -456,6 +457,7 @@ def get_gallery():
     if not items and not local_data.get("gallery_user_modified"):
         items = DEFAULT_GALLERY.copy()
 
+    import tempfile
     valid_items = []
     for idx, item in enumerate(items):
         if not item or not isinstance(item, dict):
@@ -463,12 +465,19 @@ def get_gallery():
         img_url = item.get("image_url", "").strip()
         if not img_url:
             continue
-        # Filter out non-existent local upload files
-        if img_url.startswith("/static/uploads/"):
+
+        # Check static uploads existence ONLY when running locally (not on Vercel/serverless)
+        if img_url.startswith("/static/uploads/") and not img_url.startswith("data:"):
             filename = img_url.replace("/static/uploads/", "")
-            upload_dir = os.path.join(os.path.dirname(__file__), "static", "uploads")
-            if not os.path.exists(os.path.join(upload_dir, filename)):
+            local_dir = os.path.join(os.path.dirname(__file__), "static", "uploads")
+            tmp_dir = os.path.join(tempfile.gettempdir(), "uploads")
+            
+            local_exists = os.path.exists(os.path.join(local_dir, filename))
+            tmp_exists = os.path.exists(os.path.join(tmp_dir, filename))
+            
+            if not local_exists and not tmp_exists and not (os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME")):
                 continue
+
         # Filter out broken unsplash test URLs
         if "photo-1567157577867" in img_url or "photo-1609102026400" in img_url:
             continue
@@ -488,36 +497,26 @@ def get_gallery():
     set_cached("gallery", valid_items)
     return valid_items
 
-def add_gallery_item(title, image_url, media_type="photo", year="2026", mime_type=None, thumbnail_url=None):
-    existing_items = get_gallery()
-    max_order = max([int(i.get("display_order", 0)) for i in existing_items], default=0)
-    new_order = max_order + 1
-
-    clean_url = image_url.strip()
-    if "youtube.com" in clean_url or "youtu.be" in clean_url:
-        clean_url = to_youtube_embed_url(clean_url)
-        media_type = "video"
-
+def add_gallery_item(title, image_url, media_type="photo", year="2025", mime_type="image/jpeg", thumbnail_url=""):
     item_id = f"item_{int(datetime.datetime.now().timestamp())}"
     item = {
         "_id": item_id,
         "title": title.strip(),
-        "image_url": clean_url,
+        "image_url": image_url.strip(),
         "type": media_type,
-        "mime_type": mime_type or ("video/mp4" if media_type == "video" else "image/jpeg"),
-        "thumbnail_url": thumbnail_url or (clean_url if media_type == "photo" else ""),
-        "display_order": new_order,
+        "mime_type": mime_type,
+        "thumbnail_url": thumbnail_url.strip() if thumbnail_url else image_url.strip(),
         "year": year,
-        "is_active": True,
         "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
     try:
         db = get_db()
-        db_item = item.copy()
-        db_item["_id"] = ObjectId()
-        res = db.gallery.insert_one(db_item)
-        item["_id"] = str(res.inserted_id)
+        if db is not None:
+            db_item = item.copy()
+            db_item["_id"] = ObjectId()
+            res = db.gallery.insert_one(db_item)
+            item["_id"] = str(res.inserted_id)
     except Exception as e:
         print(f"MongoDB add_gallery_item error: {e}")
 
@@ -557,15 +556,15 @@ def reorder_gallery_items(ordered_ids):
 
     try:
         db = get_db()
-        for item in reordered_list:
-            item_id = item["_id"]
-            new_order = item["display_order"]
-            if len(item_id) == 24:
-                try:
-                    db.gallery.update_one({"_id": ObjectId(item_id)}, {"$set": {"display_order": new_order}})
-                except Exception:
-                    pass
-            db.gallery.update_one({"_id": item_id}, {"$set": {"display_order": new_order}})
+        if db is not None:
+            for item in reordered_list:
+                g_id = str(item.get("_id", "")).strip()
+                if len(g_id) == 24:
+                    try:
+                        db.gallery.update_one({"_id": ObjectId(g_id)}, {"$set": {"display_order": item["display_order"]}})
+                    except Exception:
+                        pass
+                db.gallery.update_one({"_id": g_id}, {"$set": {"display_order": item["display_order"]}})
     except Exception as e:
         print(f"MongoDB reorder error: {e}")
 
@@ -581,12 +580,13 @@ def delete_gallery_item(item_id):
     item_id_str = str(item_id).strip()
     try:
         db = get_db()
-        if len(item_id_str) == 24:
-            try:
-                db.gallery.delete_one({"_id": ObjectId(item_id_str)})
-            except Exception:
-                pass
-        db.gallery.delete_one({"_id": item_id_str})
+        if db is not None:
+            if len(item_id_str) == 24:
+                try:
+                    db.gallery.delete_one({"_id": ObjectId(item_id_str)})
+                except Exception:
+                    pass
+            db.gallery.delete_one({"_id": item_id_str})
     except Exception as e:
         print(f"MongoDB delete_gallery_item error: {e}")
 
@@ -598,13 +598,14 @@ def delete_gallery_item(item_id):
         item["display_order"] = idx + 1
         try:
             db = get_db()
-            g_id = str(item.get("_id", "")).strip()
-            if len(g_id) == 24:
-                try:
-                    db.gallery.update_one({"_id": ObjectId(g_id)}, {"$set": {"display_order": idx + 1}})
-                except Exception:
-                    pass
-            db.gallery.update_one({"_id": g_id}, {"$set": {"display_order": idx + 1}})
+            if db is not None:
+                g_id = str(item.get("_id", "")).strip()
+                if len(g_id) == 24:
+                    try:
+                        db.gallery.update_one({"_id": ObjectId(g_id)}, {"$set": {"display_order": idx + 1}})
+                    except Exception:
+                        pass
+                db.gallery.update_one({"_id": g_id}, {"$set": {"display_order": idx + 1}})
         except Exception:
             pass
 
