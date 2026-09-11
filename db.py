@@ -133,7 +133,7 @@ def _bg_github_sync():
         _sync_lock.release()
 
 def trigger_github_sync():
-    if os.getenv("RENDER") or os.getenv("RENDER_SERVICE_ID"):
+    if os.getenv("RENDER") or os.getenv("RENDER_SERVICE_ID") or os.getenv("VERCEL") or os.getenv("VERCEL_ENV") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
         return
     t = threading.Thread(target=_bg_github_sync, daemon=True)
     t.start()
@@ -165,6 +165,7 @@ def save_json_data(data):
         print(f"Error saving data_store.json: {e}")
 
 _CLIENT = None
+_DB_INITIALIZED = False
 
 def get_db():
     global _CLIENT
@@ -173,12 +174,14 @@ def get_db():
             if "mongodb+srv" in MONGO_URI or ("mongodb://" in MONGO_URI and "localhost" not in MONGO_URI):
                 _CLIENT = MongoClient(
                     MONGO_URI,
-                    serverSelectionTimeoutMS=2500,
-                    connectTimeoutMS=2500,
-                    maxPoolSize=20,
-                    minPoolSize=2,
+                    serverSelectionTimeoutMS=1500,
+                    connectTimeoutMS=1500,
+                    socketTimeoutMS=3000,
+                    maxPoolSize=10,
+                    minPoolSize=0,
                     tls=True,
-                    tlsAllowInvalidCertificates=True
+                    tlsAllowInvalidCertificates=True,
+                    retryWrites=True
                 )
             else:
                 _CLIENT = MongoClient(MONGO_URI, serverSelectionTimeoutMS=200, connectTimeoutMS=200)
@@ -191,20 +194,31 @@ def get_db():
         print(f"MongoDB DB access exception: {e}")
         return None
 
+def _create_indexes_async():
+    try:
+        db = get_db()
+        if db is not None:
+            db.gallery.create_index([("display_order", 1)])
+            db.gallery.create_index([("created_at", -1)])
+            db.vargani_records.create_index([("created_at", -1)])
+            db.vargani_records.create_index([("receipt_no", 1)])
+    except Exception as idx_err:
+        pass
+
 def init_db():
+    global _DB_INITIALIZED
+    if _DB_INITIALIZED:
+        return
+    _DB_INITIALIZED = True
+    
     local_data = load_json_data()
     try:
         db = get_db()
         if db is not None:
-            if db.settings.count_documents({}) == 0:
+            if db.settings.find_one({}) is None:
                 db.settings.insert_one(local_data.get("settings", DEFAULT_SETTINGS.copy()))
-            try:
-                db.gallery.create_index([("display_order", 1)])
-                db.gallery.create_index([("created_at", -1)])
-                db.vargani_records.create_index([("created_at", -1)])
-                db.vargani_records.create_index([("receipt_no", 1)])
-            except Exception as idx_err:
-                print(f"MongoDB Index Info: {idx_err}")
+            t = threading.Thread(target=_create_indexes_async, daemon=True)
+            t.start()
             print("Database initialized successfully!")
     except Exception as e:
         print(f"MongoDB Init Info: {e}")
@@ -260,6 +274,14 @@ def get_all_vargani(status=None, search=None):
     cached_res = get_cached(cached_key)
     if cached_res is not None:
         return cached_res
+
+    # Fast-path: derive status filter from cached all-records if available
+    if status and not search:
+        all_cached = get_cached("vargani_None_None")
+        if all_cached is not None:
+            filtered = [r for r in all_cached if r.get("status") == status] if status != "All" else list(all_cached)
+            set_cached(cached_key, filtered)
+            return filtered
 
     records = []
     try:

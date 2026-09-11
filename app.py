@@ -25,11 +25,16 @@ def allowed_file(filename):
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 try:
-    db.init_db()
+    import threading
+    threading.Thread(target=db.init_db, daemon=True).start()
 except Exception as e:
     print(f"MongoDB Init Error: {e}")
 
 ADMIN_MOBILE = "7756806580"
+
+@app.before_request
+def before_request_time():
+    request._start_time = time.time()
 
 @app.route('/static/uploads/<path:filename>')
 def serve_upload(filename):
@@ -96,6 +101,10 @@ def add_header(response):
                     response.headers['Content-Encoding'] = 'gzip'
                     response.headers['Content-Length'] = len(compressed_data)
                     response.headers['Vary'] = 'Accept-Encoding'
+
+    if hasattr(request, '_start_time'):
+        duration = time.time() - request._start_time
+        print(f"⚡ [PERF] {request.method} {request.path} -> {response.status_code} ({duration:.3f}s)")
     return response
 
 # LOGIN & AUTH ROUTES
