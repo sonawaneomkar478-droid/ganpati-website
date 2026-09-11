@@ -12,21 +12,39 @@
     "contact_phone2": "9876543210",
     "contact_name3": "खजिनदार (Treasurer)",
     "contact_phone3": "9822114455",
-    "qr_code_url": "/static/images/default_qr.png",
+    "qr_code_url": "/static/uploads/qr_1788865307_WhatsApp_Image_2026-08-19_at_1.11.21_PM.jpeg",
     "address": "गणेश चौक, मुख्य रस्ता, पुणे"
   },
   "gallery": [
     {
-      "_id": "6aa3a0d792d230a1e8584c5f",
-      "title": "Test Cache Fix",
-      "image_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=600&q=60",
-      "type": "photo",
-      "mime_type": "image/jpeg",
-      "thumbnail_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=600&q=60",
+      "_id": "user_vid_1",
+      "title": "गणेशोत्सव विसर्जन मिरवणूक व्हिडिओ २०२६",
+      "image_url": "/static/uploads/vid_1788933034_WhatsApp_Video_2026-09-09_at_11.15.45_AM.mp4",
+      "type": "video",
+      "mime_type": "video/mp4",
       "display_order": 1,
       "year": "2026",
       "is_active": true,
-      "created_at": "2026-09-11 12:03:59"
+      "created_at": "2026-09-09 11:15:45"
+    },
+    {
+      "_id": "user_photo_1",
+      "title": "श्री गणपती बाप्पा फोटो",
+      "image_url": "/static/uploads/slide_1788861617_adipandcard.jpeg",
+      "type": "photo",
+      "mime_type": "image/jpeg",
+      "display_order": 2,
+      "year": "2025",
+      "is_active": true,
+      "created_at": "2026-09-08 15:30:17"
+    },
+    {
+      "_id": "default_1",
+      "title": "मागील वर्षातील भव्य श्री गणेश विसर्जन सोहळा २०२५",
+      "image_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=600&q=60",
+      "type": "photo",
+      "display_order": 3,
+      "year": "2025"
     }
   ],
   "vargani_records": [

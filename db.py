@@ -40,17 +40,34 @@ DEFAULT_SETTINGS = {
     "contact_phone2": "9876543210",
     "contact_name3": "खजिनदार (Treasurer)",
     "contact_phone3": "9822114455",
-    "qr_code_url": "/static/images/default_qr.png",
+    "qr_code_url": "/static/uploads/qr_1788865307_WhatsApp_Image_2026-08-19_at_1.11.21_PM.jpeg",
     "address": "गणेश चौक, मुख्य रस्ता, पुणे"
 }
 
 DEFAULT_GALLERY = [
     {
+        "_id": "user_vid_1",
+        "title": "गणेशोत्सव विसर्जन मिरवणूक व्हिडिओ २०२६",
+        "image_url": "/static/uploads/vid_1788933034_WhatsApp_Video_2026-09-09_at_11.15.45_AM.mp4",
+        "type": "video",
+        "mime_type": "video/mp4",
+        "display_order": 1,
+        "year": "2026"
+    },
+    {
+        "_id": "user_photo_1",
+        "title": "श्री गणपती बाप्पा फोटो",
+        "image_url": "/static/uploads/slide_1788861617_adipandcard.jpeg",
+        "type": "photo",
+        "display_order": 2,
+        "year": "2025"
+    },
+    {
         "_id": "default_1",
         "title": "मागील वर्षातील भव्य श्री गणेश विसर्जन सोहळा २०२५",
         "image_url": "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?auto=format&fit=crop&w=600&q=60",
         "type": "photo",
-        "display_order": 1,
+        "display_order": 3,
         "year": "2025"
     },
     {
@@ -58,7 +75,7 @@ DEFAULT_GALLERY = [
         "title": "श्रींची आकर्षक आरास व महापूजा",
         "image_url": "https://images.unsplash.com/photo-1620766182966-c6eb5ed2b788?auto=format&fit=crop&w=600&q=60",
         "type": "photo",
-        "display_order": 2,
+        "display_order": 4,
         "year": "2025"
     }
 ]
