@@ -11,18 +11,34 @@ import re
 import mimetypes
 import db
 
+import tempfile
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'ganpati_bappa_morya_vargani_2026_secret_key'
-app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
+
+def get_writable_upload_dir():
+    local_dir = os.path.join(app.root_path, 'static', 'uploads')
+    try:
+        os.makedirs(local_dir, exist_ok=True)
+        test_file = os.path.join(local_dir, '.write_test')
+        with open(test_file, 'w') as f:
+            f.write('ok')
+        os.remove(test_file)
+        return local_dir, True
+    except Exception:
+        tmp_dir = os.path.join(tempfile.gettempdir(), 'uploads')
+        os.makedirs(tmp_dir, exist_ok=True)
+        return tmp_dir, False
+
+upload_folder_path, IS_LOCAL_WRITABLE = get_writable_upload_dir()
+app.config['UPLOAD_FOLDER'] = upload_folder_path
 app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500 MB max for video files
 
 CORS(app)
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'mp4', 'webm', 'mov', 'mkv', 'avi'}
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'mp4', 'webm', 'mov', 'mkv', 'avi', 'heic'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 try:
     import threading
@@ -38,15 +54,23 @@ def before_request_time():
 
 @app.route('/static/uploads/<path:filename>')
 def serve_upload(filename):
-    path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    if not os.path.exists(path):
+    local_dir = os.path.join(app.root_path, 'static', 'uploads')
+    local_path = os.path.join(local_dir, filename)
+    target_dir = local_dir
+
+    if not os.path.exists(local_path):
+        tmp_dir = os.path.join(tempfile.gettempdir(), 'uploads')
+        local_path = os.path.join(tmp_dir, filename)
+        target_dir = tmp_dir
+
+    if not os.path.exists(local_path):
         return "File not found", 404
 
-    file_size = os.path.getsize(path)
+    file_size = os.path.getsize(local_path)
     range_header = request.headers.get('Range', None)
 
     if not range_header:
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+        return send_from_directory(target_dir, filename)
 
     byte1, byte2 = 0, None
     m = re.search(r'bytes=(\d+)-(\d+)?', range_header)
@@ -62,7 +86,7 @@ def serve_upload(filename):
 
     length = byte2 - byte1 + 1
 
-    with open(path, 'rb') as f:
+    with open(local_path, 'rb') as f:
         f.seek(byte1)
         data = f.read(length)
 
@@ -300,22 +324,53 @@ def save_uploaded_media(file_obj, prefix="media"):
     raw_name = file_obj.filename.rsplit('.', 1)[0] if '.' in file_obj.filename else "file"
     safe_name = secure_filename(raw_name) or "file"
     ext = file_obj.filename.rsplit('.', 1)[1].lower() if '.' in file_obj.filename else 'jpg'
-    filename = f"{prefix}_{int(time.time())}_{safe_name}.{ext}"
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
-    # Stream write directly to disk with 0 RAM footprint
-    file_obj.save(filepath)
+    upload_dir, is_writable = get_writable_upload_dir()
 
-    # Optimize and compress images with Pillow if available
-    if ext in {'jpg', 'jpeg', 'png', 'webp'}:
+    # Image Compression & High Quality Optimization (Pillow WebP)
+    if ext in {'jpg', 'jpeg', 'png', 'webp', 'gif', 'heic'}:
         try:
-            from PIL import Image
-            with Image.open(filepath) as img:
+            from PIL import Image, ImageOps
+            import io
+
+            file_obj.seek(0)
+            img = Image.open(file_obj)
+            img = ImageOps.exif_transpose(img)
+            if img.mode in ('RGBA', 'P'):
                 img = img.convert('RGB')
-                img.thumbnail((1600, 1600), Image.Resampling.LANCZOS)
-                img.save(filepath, 'JPEG', quality=82, optimize=True)
+            elif img.mode != 'RGB':
+                img = img.convert('RGB')
+
+            img.thumbnail((1600, 1600), Image.Resampling.LANCZOS)
+
+            buf = io.BytesIO()
+            img.save(buf, format='WEBP', quality=82, optimize=True)
+            compressed_data = buf.getvalue()
+
+            filename = f"{prefix}_{int(time.time())}_{safe_name}.webp"
+            filepath = os.path.join(upload_dir, filename)
+
+            try:
+                with open(filepath, 'wb') as f:
+                    f.write(compressed_data)
+            except Exception as write_err:
+                print(f"File write warning: {write_err}")
+
+            if not is_writable or os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
+                if len(compressed_data) < 400 * 1024:
+                    b64_str = base64.b64encode(compressed_data).decode('utf-8')
+                    return f"data:image/webp;base64,{b64_str}"
+
+            return f"/static/uploads/{filename}"
         except Exception as p_err:
-            print(f"Pillow optimization info: {p_err}")
+            print(f"Pillow image compression info: {p_err}")
+
+    # Video & Other Media Files
+    filename = f"{prefix}_{int(time.time())}_{safe_name}.{ext}"
+    filepath = os.path.join(upload_dir, filename)
+    
+    file_obj.seek(0)
+    file_obj.save(filepath)
 
     return f"/static/uploads/{filename}"
 
