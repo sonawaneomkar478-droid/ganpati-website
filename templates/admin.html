@@ -598,7 +598,7 @@
         // Instant Delete Slider Media (Zero Page Reload)
         async function deleteSliderItem(id, btn) {
             if (!confirm('नक्की हा स्लाईडर फोटो/व्हिडिओ हटवायचा आहे का?')) return;
-            const card = btn ? btn.closest('div[style*="border"]') : null;
+            const card = btn ? btn.closest('.media-order-card') : null;
             if (card) {
                 card.style.opacity = '0.2';
                 card.style.pointerEvents = 'none';
@@ -608,6 +608,7 @@
                 const data = await res.json();
                 if (data.success) {
                     if (card) card.remove();
+                    updateMediaSequenceBadges();
                 } else {
                     if (card) { card.style.opacity = '1'; card.style.pointerEvents = 'auto'; }
                     alert('❌ एरर: ' + data.message);

@@ -375,6 +375,7 @@ def get_gallery():
     cached_res = get_cached("gallery")
     if cached_res is not None:
         return cached_res
+    
     items = []
     try:
         db = get_db()
@@ -383,13 +384,24 @@ def get_gallery():
             item["_id"] = str(item["_id"])
     except Exception as e:
         print(f"MongoDB get_gallery info: {e}")
-    
-    if not items:
-        local_data = load_json_data()
-        items = local_data.get("gallery", [])
+
+    local_data = load_json_data()
+    local_gallery = local_data.get("gallery", [])
+
+    combined_dict = {}
+    for item in local_gallery:
+        if item and isinstance(item, dict) and item.get("image_url"):
+            combined_dict[str(item.get("_id")).strip()] = item
+    for item in items:
+        if item and isinstance(item, dict) and item.get("image_url"):
+            combined_dict[str(item.get("_id")).strip()] = item
+
+    all_items = list(combined_dict.values())
+    if not all_items and not local_data.get("gallery_user_modified"):
+        all_items = DEFAULT_GALLERY.copy()
 
     valid_items = []
-    for idx, item in enumerate(items):
+    for idx, item in enumerate(all_items):
         img_url = item.get("image_url", "").strip()
         if not img_url:
             continue
@@ -408,9 +420,6 @@ def get_gallery():
         if "type" not in item:
             item["type"] = "photo"
         valid_items.append(item)
-
-    if not valid_items:
-        valid_items = DEFAULT_GALLERY.copy()
 
     valid_items.sort(key=lambda x: (int(x.get("display_order", 9999)), str(x.get("created_at", ""))))
     set_cached("gallery", valid_items)
@@ -448,7 +457,9 @@ def add_gallery_item(title, image_url, media_type="photo", year="2026", mime_typ
     gallery = local_data.get("gallery", [])
     gallery.append(item)
     local_data["gallery"] = gallery
+    local_data["gallery_user_modified"] = True
     save_json_data(local_data)
+    invalidate_cache()
 
     return item
 
@@ -492,31 +503,34 @@ def reorder_gallery_items(ordered_ids):
 
     local_data = load_json_data()
     local_data["gallery"] = reordered_list
+    local_data["gallery_user_modified"] = True
     save_json_data(local_data)
+    invalidate_cache()
     
     return reordered_list
 
 def delete_gallery_item(item_id):
+    item_id_str = str(item_id).strip()
     try:
         db = get_db()
-        if len(item_id) == 24:
+        if len(item_id_str) == 24:
             try:
-                db.gallery.delete_one({"_id": ObjectId(item_id)})
+                db.gallery.delete_one({"_id": ObjectId(item_id_str)})
             except Exception:
                 pass
-        db.gallery.delete_one({"_id": item_id})
+        db.gallery.delete_one({"_id": item_id_str})
     except Exception as e:
         print(f"MongoDB delete_gallery_item error: {e}")
 
     local_data = load_json_data()
     gallery = local_data.get("gallery", [])
-    new_gallery = [g for g in gallery if str(g.get("_id")) != str(item_id)]
+    new_gallery = [g for g in gallery if str(g.get("_id")).strip() != item_id_str]
     
     for idx, item in enumerate(new_gallery):
         item["display_order"] = idx + 1
         try:
             db = get_db()
-            g_id = str(item.get("_id", ""))
+            g_id = str(item.get("_id", "")).strip()
             if len(g_id) == 24:
                 try:
                     db.gallery.update_one({"_id": ObjectId(g_id)}, {"$set": {"display_order": idx + 1}})
@@ -527,7 +541,9 @@ def delete_gallery_item(item_id):
             pass
 
     local_data["gallery"] = new_gallery
+    local_data["gallery_user_modified"] = True
     save_json_data(local_data)
+    invalidate_cache()
     return True
 
 def get_settings():
@@ -588,6 +604,7 @@ def update_settings(data):
     st["updated_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     local_data["settings"] = st
     save_json_data(local_data)
+    invalidate_cache()
 
     return get_settings()
 
