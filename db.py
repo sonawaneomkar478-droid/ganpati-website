@@ -409,13 +409,10 @@ def to_youtube_embed_url(url):
     if 'youtube.com' not in url_str and 'youtu.be' not in url_str:
         return url_str
 
-    if '/embed/' in url_str and 'watch?' not in url_str and 'shorts' not in url_str:
-        return url_str
-
     m = re.search(r'(?:v=|\/shorts\/|\/embed\/|youtu\.be\/)([a-zA-Z0-9_-]{11})', url_str)
     if m:
         video_id = m.group(1)
-        return f"https://www.youtube.com/embed/{video_id}"
+        return f"https://www.youtube.com/embed/{video_id}?playsinline=1&rel=0&enablejsapi=1"
     return url_str
 
 def get_gallery():
