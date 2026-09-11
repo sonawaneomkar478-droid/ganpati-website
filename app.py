@@ -456,21 +456,6 @@ def list_vargani():
 def ping():
     return "PONG", 200, {'Cache-Control': 'no-cache, no-store, must-revalidate'}
 
-import threading
-import urllib.request
-
-def keep_alive():
-    time.sleep(5)
-    while True:
-        try:
-            urllib.request.urlopen("https://ganpati-website.onrender.com/ping", timeout=5)
-        except Exception:
-            pass
-        time.sleep(180)
-
-keep_alive_thread = threading.Thread(target=keep_alive, daemon=True)
-keep_alive_thread.start()
-
 if __name__ == '__main__':
     print("Starting Ganpati Vargani Portal with Local Video Upload on http://localhost:5000")
     app.run(host='0.0.0.0', port=5000, debug=True)
