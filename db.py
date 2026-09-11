@@ -133,6 +133,8 @@ def _bg_github_sync():
         _sync_lock.release()
 
 def trigger_github_sync():
+    if os.getenv("RENDER") or os.getenv("RENDER_SERVICE_ID"):
+        return
     t = threading.Thread(target=_bg_github_sync, daemon=True)
     t.start()
 
@@ -377,31 +379,28 @@ def get_gallery():
         return cached_res
     
     items = []
+    mongo_ok = False
     try:
         db = get_db()
         items = list(db.gallery.find({}))
         for item in items:
             item["_id"] = str(item["_id"])
+        mongo_ok = True
     except Exception as e:
         print(f"MongoDB get_gallery info: {e}")
 
+    if not mongo_ok:
+        local_data = load_json_data()
+        items = local_data.get("gallery", [])
+
     local_data = load_json_data()
-    local_gallery = local_data.get("gallery", [])
-
-    combined_dict = {}
-    for item in local_gallery:
-        if item and isinstance(item, dict) and item.get("image_url"):
-            combined_dict[str(item.get("_id")).strip()] = item
-    for item in items:
-        if item and isinstance(item, dict) and item.get("image_url"):
-            combined_dict[str(item.get("_id")).strip()] = item
-
-    all_items = list(combined_dict.values())
-    if not all_items and not local_data.get("gallery_user_modified"):
-        all_items = DEFAULT_GALLERY.copy()
+    if not items and not local_data.get("gallery_user_modified"):
+        items = DEFAULT_GALLERY.copy()
 
     valid_items = []
-    for idx, item in enumerate(all_items):
+    for idx, item in enumerate(items):
+        if not item or not isinstance(item, dict):
+            continue
         img_url = item.get("image_url", "").strip()
         if not img_url:
             continue
