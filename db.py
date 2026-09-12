@@ -4,6 +4,7 @@ import datetime
 import tempfile
 import time
 from pymongo import MongoClient
+import gridfs
 from bson.objectid import ObjectId
 from cloud_storage import delete_cloud_media, generate_video_poster_url
 
@@ -241,6 +242,67 @@ def get_db():
         _MONGO_CHECK_FAILED_UNTIL = time.time() + 60
         print(f"MongoDB DB access exception: {e}")
         return None
+
+def get_gridfs():
+    db = get_db()
+    if db is None:
+        return None
+    try:
+        return gridfs.GridFS(db)
+    except Exception as e:
+        print(f"GridFS init exception: {e}")
+        return None
+
+def save_media_to_db(data_bytes, filename="media.webp", content_type="image/webp"):
+    """
+    Saves media binary directly into MongoDB Atlas via GridFS.
+    Ensures 100% persistence on serverless platforms (Vercel).
+    Returns media_id string or None.
+    """
+    try:
+        fs = get_gridfs()
+        if fs is not None:
+            file_id = fs.put(data_bytes, filename=filename, content_type=content_type)
+            print(f"💾 Successfully saved media to MongoDB GridFS with id: {file_id}")
+            return str(file_id)
+    except Exception as e:
+        print(f"Error saving media to GridFS: {e}")
+    return None
+
+def get_media_from_db(media_id):
+    """
+    Retrieves media from MongoDB Atlas GridFS by media_id.
+    Returns (grid_out_obj, content_type, filename, length) or None.
+    """
+    try:
+        fs = get_gridfs()
+        if fs is not None:
+            obj_id = ObjectId(str(media_id).strip())
+            if fs.exists(obj_id):
+                grid_out = fs.get(obj_id)
+                content_type = getattr(grid_out, 'content_type', None) or 'application/octet-stream'
+                filename = getattr(grid_out, 'filename', None) or 'file'
+                length = grid_out.length
+                return grid_out, content_type, filename, length
+    except Exception as e:
+        print(f"Error reading media {media_id} from GridFS: {e}")
+    return None
+
+def delete_media_from_db(media_id):
+    """
+    Permanently deletes media binary from MongoDB Atlas GridFS.
+    """
+    try:
+        fs = get_gridfs()
+        if fs is not None:
+            obj_id = ObjectId(str(media_id).strip())
+            if fs.exists(obj_id):
+                fs.delete(obj_id)
+                print(f"🗑️ Successfully deleted media {media_id} from GridFS")
+                return True
+    except Exception as e:
+        print(f"Error deleting media {media_id} from GridFS: {e}")
+    return False
 
 def _create_indexes_async():
     try:
@@ -648,6 +710,16 @@ def delete_gallery_item(item_id):
                 delete_cloud_media(target_to_delete, resource_type=res_type)
             except Exception as c_err:
                 print(f"Cloud delete error: {c_err}")
+
+        # 1.5 GridFS Deletion (MongoDB Atlas)
+        for media_link in [img_url, thumb_url]:
+            if media_link and "/api/media/" in media_link:
+                try:
+                    m_id = media_link.split("/api/media/")[1].split("?")[0].split("/")[0].strip()
+                    if len(m_id) == 24:
+                        delete_media_from_db(m_id)
+                except Exception as g_err:
+                    print(f"GridFS delete warning: {g_err}")
 
         # 2. Local Disk Physical Unlink
         for media_link in [img_url, thumb_url]:

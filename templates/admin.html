@@ -54,7 +54,7 @@
                 🎬 ३. फोटो व व्हिडिओ स्लाईडर
             </button>
             <button class="tab-btn" data-tab="cashTab">
-                ➕ ४. रोख वर्गणी नोंदवा
+                ➕ ४. वर्गणी नोंदवा (रोख / ऑनलाईन)
             </button>
             <button class="tab-btn" data-tab="settingsTab">
                 ⚙️ ५. QR Code व बँक सेटिंग्ज
@@ -320,10 +320,11 @@
             </div>
         </div>
 
-        <!-- TAB 3: MANUAL CASH ENTRY -->
+        <!-- TAB 4: MANUAL VARGANI ENTRY (CASH / ONLINE) -->
         <div id="cashTab" class="tab-content" style="display: none;">
             <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.2rem; max-width: 500px; margin: 0 auto;">
-                <h2 style="font-family: 'Khand', sans-serif; font-size: 1.4rem; color: #1e293b; margin-bottom: 1rem;">💵 रोख वर्गणी नोंदणी (Add Cash)</h2>
+                <h2 style="font-family: 'Khand', sans-serif; font-size: 1.4rem; color: #1e293b; margin-bottom: 0.3rem;">💰 वर्गणी नोंदणी (रोख / ऑनलाईन)</h2>
+                <p style="font-size: 0.82rem; color: #64748b; margin-bottom: 1.2rem;">अ‍ॅडमिन येथे रोख (Cash) अथवा ऑनलाईन (GPay/PhonePe/QR/बँक) द्वारे जमा झालेली वर्गणी थेट नोंदवू शकतात.</p>
 
                 <form id="manualVarganiForm">
                     <div class="input-group">
@@ -346,7 +347,22 @@
                         <input type="number" id="manual_amount" name="amount" class="nova-input" placeholder="उदा. 501" required min="1">
                     </div>
 
-                    <button type="submit" class="btn-nova-submit" style="background: #059669;">➕ रोख वर्गणी सेव्ह करा</button>
+                    <div class="input-group">
+                        <label for="manual_payment_mode" class="input-label">पेमेंट प्रकार (Payment Mode) *</label>
+                        <select id="manual_payment_mode" name="payment_mode" class="nova-input" onchange="toggleManualTxnId(this.value)">
+                            <option value="Cash (रोख)">💵 रोख (Cash जमा)</option>
+                            <option value="Online UPI (GPay / PhonePe / QR)">📱 ऑनलाईन UPI (GPay / PhonePe / QR)</option>
+                            <option value="NetBanking (बँक ट्रान्सफर)">🏦 बँक ट्रान्सफर (NEFT / IMPS / NetBanking)</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group" id="manualTxnGroup" style="display: none;">
+                        <label for="manual_transaction_id" class="input-label">Transaction ID / UTR क्रमांक (पर्यायी)</label>
+                        <input type="text" id="manual_transaction_id" name="transaction_id" class="nova-input" placeholder="उदा. 423987123456 / UTR No.">
+                        <small style="color: #64748b; font-size: 0.75rem;">(ऑनलाईन व्यवहाराचा UTR किंवा Reference नंबर येथे नोंदवा)</small>
+                    </div>
+
+                    <button type="submit" class="btn-nova-submit" style="background: #059669; font-weight: 700; font-size: 1rem;">➕ वर्गणी सेव्ह करा (Save Entry)</button>
                 </form>
             </div>
         </div>
@@ -515,6 +531,18 @@
 
     <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
     <script>
+        // Toggle Transaction ID Field in Manual Vargani Tab
+        function toggleManualTxnId(val) {
+            const grp = document.getElementById('manualTxnGroup');
+            if (grp) {
+                if (val && (val.includes('Online') || val.includes('NetBanking') || val.includes('UPI'))) {
+                    grp.style.display = 'block';
+                } else {
+                    grp.style.display = 'none';
+                }
+            }
+        }
+
         // Media Type Toggle in Admin Slider Form
         const slideTypeSelect = document.getElementById('slide_type');
         if (slideTypeSelect) {

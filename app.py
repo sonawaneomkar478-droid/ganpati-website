@@ -4,7 +4,7 @@ import base64
 import datetime
 import urllib.parse
 import gzip
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_from_directory
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_from_directory, Response
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import re
@@ -109,6 +109,54 @@ def serve_upload(filename):
     response.headers.add('Content-Length', str(length))
     response.headers.add('Cache-Control', 'public, max-age=31536000')
     return response
+
+# API: SERVE MEDIA DIRECTLY FROM MONGODB ATLAS GRIDFS (100% PERSISTENT & FAST)
+@app.route('/api/media/<media_id>')
+def serve_media_db(media_id):
+    try:
+        media_info = db.get_media_from_db(media_id)
+        if not media_info:
+            return "Media not found", 404
+        grid_out, content_type, filename, file_size = media_info
+
+        range_header = request.headers.get('Range', None)
+        if not range_header:
+            data = grid_out.read()
+            resp = Response(data, 200, mimetype=content_type)
+            resp.headers['Content-Length'] = str(file_size)
+            resp.headers['Accept-Ranges'] = 'bytes'
+            resp.headers['Cache-Control'] = 'public, max-age=2592000, immutable'
+            return resp
+
+        # HTTP Range Header Support (Crucial for Video Playback & Seeking on Mobile/Desktop)
+        byte1, byte2 = 0, None
+        m = re.search(r'bytes=(\d+)-(\d+)?', range_header)
+        if m:
+            g = m.groups()
+            if g[0]:
+                byte1 = int(g[0])
+            if g[1]:
+                byte2 = int(g[1])
+
+        if byte2 is None:
+            byte2 = min(file_size - 1, byte1 + 1024 * 1024 - 1)
+
+        if byte1 >= file_size:
+            return Response("Requested range not satisfiable", 416)
+
+        length = byte2 - byte1 + 1
+        grid_out.seek(byte1)
+        data = grid_out.read(length)
+
+        resp = Response(data, 206, mimetype=content_type, direct_passthrough=True)
+        resp.headers['Content-Range'] = f'bytes {byte1}-{byte2}/{file_size}'
+        resp.headers['Accept-Ranges'] = 'bytes'
+        resp.headers['Content-Length'] = str(length)
+        resp.headers['Cache-Control'] = 'public, max-age=2592000, immutable'
+        return resp
+    except Exception as e:
+        print(f"Error serving media {media_id}: {e}")
+        return "Internal server error", 500
 
 @app.route('/static/<path:filename>')
 def serve_static(filename):
@@ -224,10 +272,9 @@ def submit_vargani():
         if 'screenshot' in request.files:
             file = request.files['screenshot']
             if file and allowed_file(file.filename):
-                filename = f"txn_{int(datetime.datetime.now().timestamp())}_{secure_filename(file.filename)}"
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(filepath)
-                screenshot_url = f"/static/uploads/{filename}"
+                saved_s = save_uploaded_media(file, prefix="txn")
+                if saved_s:
+                    screenshot_url = saved_s
 
         status = 'Pending Cash' if 'Cash' in payment_mode else 'Pending'
 
@@ -282,7 +329,7 @@ def verify_record(record_id):
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
-# API: ADD MANUAL CASH ENTRY
+# API: ADD MANUAL VARGANI ENTRY (CASH / ONLINE)
 @app.route('/api/vargani/manual', methods=['POST'])
 def add_manual_vargani():
     try:
@@ -291,10 +338,17 @@ def add_manual_vargani():
         mobile = data.get('mobile', '').strip()
         address = data.get('address', '').strip()
         amount = data.get('amount', 0)
-        payment_mode = data.get('payment_mode', 'Cash (रोख)')
+        payment_mode = (data.get('payment_mode', '') or 'Cash (रोख)').strip()
+        transaction_id = data.get('transaction_id', '').strip()
 
         if not name or not amount:
             return jsonify({'success': False, 'message': 'नाव आणि रक्कम आवश्यक आहे.'}), 400
+
+        if not transaction_id:
+            if 'Cash' in payment_mode or 'रोख' in payment_mode:
+                transaction_id = 'ADMIN-CASH'
+            else:
+                transaction_id = f"ADMIN-ONLINE-{int(time.time())}"
 
         vargani_data = {
             'name': name,
@@ -302,14 +356,14 @@ def add_manual_vargani():
             'address': address,
             'amount': amount,
             'payment_mode': payment_mode,
-            'transaction_id': 'ADMIN-CASH',
+            'transaction_id': transaction_id,
             'status': 'Verified'
         }
 
         record = db.add_vargani(vargani_data)
         return jsonify({
             'success': True,
-            'message': 'रोख वर्गणी नोंदवली गेली!',
+            'message': f'{payment_mode} वर्गणी यशस्वीरित्या नोंदवली गेली!',
             'receipt_no': record['receipt_no']
         })
     except Exception as e:
@@ -354,6 +408,11 @@ def save_uploaded_media(file_obj, prefix="media"):
             img.save(buf, format='WEBP', quality=82, optimize=True)
             compressed_data = buf.getvalue()
 
+            # FIRST PRIORITY: Save compressed WebP directly into MongoDB Atlas GridFS
+            media_id = db.save_media_to_db(compressed_data, filename=f"{safe_name}.webp", content_type="image/webp")
+            if media_id:
+                return f"/api/media/{media_id}"
+
             filename = f"{prefix}_{int(time.time())}_{safe_name}.webp"
             filepath = os.path.join(upload_dir, filename)
 
@@ -368,11 +427,23 @@ def save_uploaded_media(file_obj, prefix="media"):
             print(f"Pillow image compression info: {p_err}")
 
     # Video & Other Media Files
+    file_obj.seek(0)
+    file_bytes = file_obj.read()
+    mime_type = getattr(file_obj, 'mimetype', None) or (f"video/{ext}" if ext in {'mp4', 'mov', 'webm'} else "application/octet-stream")
+
+    # FIRST PRIORITY: Save video binary directly into MongoDB Atlas GridFS
+    media_id = db.save_media_to_db(file_bytes, filename=f"{safe_name}.{ext}", content_type=mime_type)
+    if media_id:
+        return f"/api/media/{media_id}"
+
     filename = f"{prefix}_{int(time.time())}_{safe_name}.{ext}"
     filepath = os.path.join(upload_dir, filename)
     
-    file_obj.seek(0)
-    file_obj.save(filepath)
+    try:
+        with open(filepath, 'wb') as f:
+            f.write(file_bytes)
+    except Exception as v_err:
+        print(f"Video write warning: {v_err}")
 
     return f"/static/uploads/{filename}"
 

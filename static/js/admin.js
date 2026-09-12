@@ -55,7 +55,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Add Manual Cash Vargani Form
+    // Toggle Transaction ID Field in Manual Vargani Tab
+    window.toggleManualTxnId = function(val) {
+        const grp = document.getElementById('manualTxnGroup');
+        if (grp) {
+            if (val && (val.includes('Online') || val.includes('NetBanking') || val.includes('UPI'))) {
+                grp.style.display = 'block';
+            } else {
+                grp.style.display = 'none';
+            }
+        }
+    };
+
+    // Add Manual Vargani Form (Cash / Online)
     const manualForm = document.getElementById('manualVarganiForm');
     if (manualForm) {
         manualForm.addEventListener('submit', async (e) => {
@@ -71,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert('✅ रोख वर्गणी नोंदवली गेली! पावती नं: ' + data.receipt_no);
+                    alert('✅ ' + (data.message || ('वर्गणी यशस्वीरित्या नोंदवली गेली! पावती नं: ' + data.receipt_no)));
                     manualForm.reset();
                     location.reload();
                 } else {
