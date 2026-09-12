@@ -38,6 +38,10 @@ CORS(app)
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'mp4', 'webm', 'mov', 'mkv', 'avi', 'heic'}
 
 def allowed_file(filename):
+    if not filename:
+        return False
+    if filename.lower() in ('blob', 'image', 'file', 'video'):
+        return True
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 try:
@@ -383,11 +387,27 @@ def delete_record(record_id):
 
 # API: GALLERY / SLIDER UPLOAD (PHOTO OR LOCAL VIDEO FILE OR YOUTUBE LINK)
 def save_uploaded_media(file_obj, prefix="media"):
-    if not file_obj or not file_obj.filename or not allowed_file(file_obj.filename):
+    if not file_obj:
         return None
-    raw_name = file_obj.filename.rsplit('.', 1)[0] if '.' in file_obj.filename else "file"
+    raw_filename = getattr(file_obj, 'filename', '') or "file.jpg"
+    if raw_filename.lower() in ('blob', 'file', 'image'):
+        m_type = getattr(file_obj, 'mimetype', '') or getattr(file_obj, 'content_type', '')
+        if 'webp' in m_type:
+            raw_filename = f"{prefix}.webp"
+        elif 'png' in m_type:
+            raw_filename = f"{prefix}.png"
+        elif 'mp4' in m_type:
+            raw_filename = f"{prefix}.mp4"
+        else:
+            raw_filename = f"{prefix}.jpg"
+        file_obj.filename = raw_filename
+
+    if not allowed_file(raw_filename):
+        return None
+
+    raw_name = raw_filename.rsplit('.', 1)[0] if '.' in raw_filename else "file"
     safe_name = secure_filename(raw_name) or "file"
-    ext = file_obj.filename.rsplit('.', 1)[1].lower() if '.' in file_obj.filename else 'jpg'
+    ext = raw_filename.rsplit('.', 1)[1].lower() if '.' in raw_filename else 'jpg'
 
     upload_dir, is_writable = get_writable_upload_dir()
 

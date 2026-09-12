@@ -111,11 +111,22 @@
             <button class="slider-arrow prev" onclick="moveSlide(-1)">❮</button>
             <button class="slider-arrow next" onclick="moveSlide(1)">❯</button>
         </div>
+        {% elif settings.entrance_photo_url %}
+        <div class="slider-box" id="customSlider">
+            <div class="slide active" data-type="photo">
+                <div class="slide-bg-blur" style="background-image: url('{{ settings.entrance_photo_url }}');"></div>
+                <img src="{{ settings.entrance_photo_url }}" alt="{{ settings.mandal_name }}" class="slide-img-main" loading="eager" decoding="async">
+                <div class="slide-caption">
+                    <h3>🚩 {{ settings.mandal_name }}</h3>
+                    <p style="font-size: 0.8rem; color: #ffe082;">{{ settings.entrance_shloka or '🚩 ॐ गं गणपतये नमः 🚩' }}</p>
+                </div>
+            </div>
+        </div>
         {% else %}
         <div class="slider-box" style="display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at center, #2e0814 0%, #0d0206 100%); min-height: 240px; border-radius: 14px; border: 1px solid rgba(255, 183, 3, 0.3); text-align: center; padding: 20px;">
             <div style="color: #ffe082;">
                 <div style="font-size: 3rem; margin-bottom: 8px;">🚩</div>
-                <h3 style="font-family: 'Khand', sans-serif; font-size: 1.4rem; color: #ffb703; margin: 0 0 6px 0;">श्री गणेशोत्सव मित्र मंडळ</h3>
+                <h3 style="font-family: 'Khand', sans-serif; font-size: 1.4rem; color: #ffb703; margin: 0 0 6px 0;">{{ settings.mandal_name or 'श्री गणेशोत्सव मित्र मंडळ' }}</h3>
                 <p style="font-size: 0.85rem; color: #ffecb3; margin: 0;">लवकरच नवीन फोटो आणि व्हिडिओ येथे दिसतील!</p>
             </div>
         </div>

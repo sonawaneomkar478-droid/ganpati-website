@@ -211,9 +211,9 @@ def get_db():
             if "mongodb+srv" in MONGO_URI or ("mongodb://" in MONGO_URI and "localhost" not in MONGO_URI):
                 _CLIENT = MongoClient(
                     MONGO_URI,
-                    serverSelectionTimeoutMS=1500,
-                    connectTimeoutMS=1500,
-                    socketTimeoutMS=3000,
+                    serverSelectionTimeoutMS=6000,
+                    connectTimeoutMS=6000,
+                    socketTimeoutMS=10000,
                     maxPoolSize=10,
                     minPoolSize=0,
                     tls=True,
@@ -221,15 +221,15 @@ def get_db():
                     retryWrites=True
                 )
             else:
-                _CLIENT = MongoClient(MONGO_URI, serverSelectionTimeoutMS=200, connectTimeoutMS=200)
+                _CLIENT = MongoClient(MONGO_URI, serverSelectionTimeoutMS=500, connectTimeoutMS=500)
         except Exception as e:
-            _MONGO_CHECK_FAILED_UNTIL = time.time() + 60
+            _MONGO_CHECK_FAILED_UNTIL = time.time() + 5
             print(f"MongoClient init exception: {e}")
             return None
     try:
         return _CLIENT[DB_NAME]
     except Exception as e:
-        _MONGO_CHECK_FAILED_UNTIL = time.time() + 60
+        _MONGO_CHECK_FAILED_UNTIL = time.time() + 5
         print(f"MongoDB DB access exception: {e}")
         return None
 
@@ -245,8 +245,10 @@ def get_gridfs():
 
 def save_media_to_db(data_bytes, filename="media.webp", content_type="image/webp"):
     """
-    Saves media binary directly into MongoDB Atlas via GridFS.
-    Ensures 100% persistence on serverless platforms (Vercel).
+    Saves media binary directly into MongoDB Atlas.
+    Dual-Tier:
+      1. GridFS for large media/streaming
+      2. Fallback to db.media_store BSON collection
     Returns media_id string or None.
     """
     try:
@@ -256,18 +258,37 @@ def save_media_to_db(data_bytes, filename="media.webp", content_type="image/webp
             print(f"💾 Successfully saved media to MongoDB GridFS with id: {file_id}")
             return str(file_id)
     except Exception as e:
-        print(f"Error saving media to GridFS: {e}")
+        print(f"GridFS save warning: {e}")
+
+    # Fallback to direct BSON binary storage in db.media_store
+    try:
+        db_conn = get_db()
+        if db_conn is not None:
+            doc = {
+                "filename": filename,
+                "content_type": content_type,
+                "data": data_bytes,
+                "length": len(data_bytes),
+                "created_at": datetime.datetime.now()
+            }
+            res = db_conn.media_store.insert_one(doc)
+            print(f"💾 Successfully saved media to MongoDB media_store with id: {res.inserted_id}")
+            return str(res.inserted_id)
+    except Exception as d_err:
+        print(f"media_store save warning: {d_err}")
+
     return None
 
 def get_media_from_db(media_id):
     """
-    Retrieves media from MongoDB Atlas GridFS by media_id.
-    Returns (grid_out_obj, content_type, filename, length) or None.
+    Retrieves media from MongoDB Atlas GridFS or fallback db.media_store.
+    Returns (readable_stream_or_obj, content_type, filename, length) or None.
     """
+    media_id_str = str(media_id).strip()
     try:
         fs = get_gridfs()
-        if fs is not None:
-            obj_id = ObjectId(str(media_id).strip())
+        if fs is not None and len(media_id_str) == 24:
+            obj_id = ObjectId(media_id_str)
             if fs.exists(obj_id):
                 grid_out = fs.get(obj_id)
                 content_type = getattr(grid_out, 'content_type', None) or 'application/octet-stream'
@@ -275,24 +296,59 @@ def get_media_from_db(media_id):
                 length = grid_out.length
                 return grid_out, content_type, filename, length
     except Exception as e:
-        print(f"Error reading media {media_id} from GridFS: {e}")
+        pass
+
+    # Fallback lookup in db.media_store
+    try:
+        db_conn = get_db()
+        if db_conn is not None:
+            doc = None
+            if len(media_id_str) == 24:
+                try:
+                    doc = db_conn.media_store.find_one({"_id": ObjectId(media_id_str)})
+                except Exception:
+                    pass
+            if not doc:
+                doc = db_conn.media_store.find_one({"_id": media_id_str})
+            if doc and "data" in doc:
+                import io
+                bio = io.BytesIO(doc["data"])
+                return bio, doc.get("content_type", "image/webp"), doc.get("filename", "file"), doc.get("length", len(doc["data"]))
+    except Exception as m_err:
+        print(f"media_store read warning: {m_err}")
+
     return None
 
 def delete_media_from_db(media_id):
     """
-    Permanently deletes media binary from MongoDB Atlas GridFS.
+    Permanently deletes media binary from MongoDB Atlas GridFS and db.media_store.
     """
+    media_id_str = str(media_id).strip()
+    deleted = False
     try:
         fs = get_gridfs()
-        if fs is not None:
-            obj_id = ObjectId(str(media_id).strip())
+        if fs is not None and len(media_id_str) == 24:
+            obj_id = ObjectId(media_id_str)
             if fs.exists(obj_id):
                 fs.delete(obj_id)
-                print(f"🗑️ Successfully deleted media {media_id} from GridFS")
-                return True
-    except Exception as e:
-        print(f"Error deleting media {media_id} from GridFS: {e}")
-    return False
+                deleted = True
+    except Exception:
+        pass
+
+    try:
+        db_conn = get_db()
+        if db_conn is not None:
+            if len(media_id_str) == 24:
+                try:
+                    db_conn.media_store.delete_one({"_id": ObjectId(media_id_str)})
+                    deleted = True
+                except Exception:
+                    pass
+            db_conn.media_store.delete_one({"_id": media_id_str})
+    except Exception:
+        pass
+
+    return deleted
 
 def _create_indexes_async():
     try:
