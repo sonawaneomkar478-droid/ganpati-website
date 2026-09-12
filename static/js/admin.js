@@ -1,20 +1,38 @@
 // Admin Dashboard Logic with WhatsApp PDF Receipt Integration
 document.addEventListener('DOMContentLoaded', () => {
     
-    // Tab switching
+    // Tab switching with State Persistence (Remembers tab across refreshes)
     const navTabs = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
 
-    navTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
+    function activateTab(tabId) {
+        if (!tabId) return;
+        const targetBtn = Array.from(navTabs).find(t => t.dataset.tab === tabId);
+        const targetContent = document.getElementById(tabId);
+        if (targetBtn && targetContent) {
             navTabs.forEach(t => t.classList.remove('active'));
             tabContents.forEach(c => c.style.display = 'none');
             
-            tab.classList.add('active');
-            const target = document.getElementById(tab.dataset.tab);
-            if (target) target.style.display = 'block';
+            targetBtn.classList.add('active');
+            targetContent.style.display = 'block';
+            try {
+                localStorage.setItem('admin_active_tab', tabId);
+                history.replaceState(null, '', '#' + tabId);
+            } catch(e) {}
+        }
+    }
+
+    navTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            activateTab(tab.dataset.tab);
         });
     });
+
+    // Restore active tab from URL hash or localStorage on page load/refresh
+    const savedTab = location.hash.replace('#', '') || localStorage.getItem('admin_active_tab');
+    if (savedTab && document.getElementById(savedTab)) {
+        activateTab(savedTab);
+    }
 
     // Verify Vargani & Open WhatsApp PDF Link
     window.verifyAndSendWA = async (id) => {
@@ -55,19 +73,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Toggle Transaction ID Field in Manual Vargani Tab
-    window.toggleManualTxnId = function(val) {
-        const grp = document.getElementById('manualTxnGroup');
-        if (grp) {
-            if (val && (val.includes('Online') || val.includes('NetBanking') || val.includes('UPI'))) {
-                grp.style.display = 'block';
+    // Toggle QR Code Display in Manual Vargani Tab
+    window.toggleManualPaymentView = function(val) {
+        const qrBox = document.getElementById('manualQrBox');
+        if (qrBox) {
+            if (val && (val.includes('Online') || val.includes('QR') || val.includes('NetBanking'))) {
+                qrBox.style.display = 'block';
             } else {
-                grp.style.display = 'none';
+                qrBox.style.display = 'none';
             }
         }
     };
 
-    // Add Manual Vargani Form (Cash / Online)
+    // Add Manual Vargani Form (Cash / Online QR)
     const manualForm = document.getElementById('manualVarganiForm');
     if (manualForm) {
         manualForm.addEventListener('submit', async (e) => {
@@ -85,6 +103,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.success) {
                     alert('✅ ' + (data.message || ('वर्गणी यशस्वीरित्या नोंदवली गेली! पावती नं: ' + data.receipt_no)));
                     manualForm.reset();
+                    const qrBox = document.getElementById('manualQrBox');
+                    if (qrBox) qrBox.style.display = 'none';
+                    try { localStorage.setItem('admin_active_tab', 'cashTab'); } catch(e) {}
+                    location.hash = 'cashTab';
                     location.reload();
                 } else {
                     alert('❌ एरर: ' + data.message);

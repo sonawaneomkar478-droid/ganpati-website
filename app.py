@@ -166,28 +166,31 @@ def serve_static(filename):
         return send_from_directory(static_dir, filename)
     return "Static file not found", 404
 
+@app.context_processor
+def inject_cache_bust():
+    return {'cache_bust': int(time.time())}
+
 @app.after_request
 def add_header(response):
-    if request.path.startswith('/static/'):
-        response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
-        response.headers['Vary'] = 'Accept-Encoding'
-    elif not request.path.startswith('/api/'):
-        response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+    # Media endpoints must be cacheable for video streaming and smooth playback
+    if request.path.startswith('/api/media/') or request.path.startswith('/static/uploads/'):
+        response.headers['Cache-Control'] = 'public, max-age=86400, stale-while-revalidate=43200'
+    # Dynamic HTML routes and JSON data APIs must NEVER be cached by browsers
+    elif request.path in ['/', '/admin', '/login'] or request.path.startswith('/api/') or request.path.startswith('/receipt'):
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    elif request.path.endswith('.js') or request.path.endswith('.css'):
+        response.headers['Cache-Control'] = 'no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+    else:
+        response.headers['Cache-Control'] = 'public, max-age=86400'
+
     response.headers['X-Content-Type-Options'] = 'nosniff'
 
-    # GZIP COMPRESSION FOR TEXT RESPONSES (>450 BYTES)
-    accept_encoding = request.headers.get('Accept-Encoding', '')
-    if 'gzip' in accept_encoding and 200 <= response.status_code < 300:
-        if not response.direct_passthrough and not response.is_streamed:
-            content_type = response.headers.get('Content-Type', '')
-            if any(t in content_type for t in ['text/html', 'text/css', 'application/javascript', 'application/json', 'image/svg+xml']):
-                data = response.get_data()
-                if len(data) > 450:
-                    compressed_data = gzip.compress(data, compresslevel=6)
-                    response.set_data(compressed_data)
-                    response.headers['Content-Encoding'] = 'gzip'
-                    response.headers['Content-Length'] = len(compressed_data)
-                    response.headers['Vary'] = 'Accept-Encoding'
+    # Always display content in-browser (prevents unexpected download dialogs)
+    if 'Content-Disposition' not in response.headers:
+        response.headers['Content-Disposition'] = 'inline'
 
     if hasattr(request, '_start_time'):
         duration = time.time() - request._start_time

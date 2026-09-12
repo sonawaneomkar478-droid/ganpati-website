@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>{{ settings.mandal_name or 'श्री गणेशोत्सव मित्र मंडळ, पुणे' }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Khand:wght@600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ cache_bust }}">
     {% if gallery and gallery[0] and gallery[0].image_url %}
     <link rel="preload" as="image" href="{{ gallery[0].image_url }}" fetchpriority="high">
     {% endif %}
@@ -110,6 +110,14 @@
 
             <button class="slider-arrow prev" onclick="moveSlide(-1)">❮</button>
             <button class="slider-arrow next" onclick="moveSlide(1)">❯</button>
+        </div>
+        {% else %}
+        <div class="slider-box" style="display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at center, #2e0814 0%, #0d0206 100%); min-height: 240px; border-radius: 14px; border: 1px solid rgba(255, 183, 3, 0.3); text-align: center; padding: 20px;">
+            <div style="color: #ffe082;">
+                <div style="font-size: 3rem; margin-bottom: 8px;">🚩</div>
+                <h3 style="font-family: 'Khand', sans-serif; font-size: 1.4rem; color: #ffb703; margin: 0 0 6px 0;">श्री गणेशोत्सव मित्र मंडळ</h3>
+                <p style="font-size: 0.85rem; color: #ffecb3; margin: 0;">लवकरच नवीन फोटो आणि व्हिडिओ येथे दिसतील!</p>
+            </div>
         </div>
         {% endif %}
 
@@ -235,7 +243,7 @@
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v={{ cache_bust }}"></script>
     <script>
         // Toggle QR Code Visibility
         function toggleQrVisibility() {

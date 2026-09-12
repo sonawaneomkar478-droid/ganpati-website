@@ -19,7 +19,7 @@ DB_NAME = os.getenv("DB_NAME", "vargani_db")
 DATA_FILE = os.path.join(os.path.dirname(__file__), 'data_store.json')
 
 _CACHE = {}
-_CACHE_TTL = 300  # 5 minutes TTL
+_CACHE_TTL = 10  # 10 seconds TTL for fast updates
 _MONGO_CHECK_FAILED_UNTIL = 0
 
 def get_cached(key):
@@ -55,17 +55,7 @@ DEFAULT_SETTINGS = {
     "address": "गणेश चौक, मुख्य रस्ता, पुणे"
 }
 
-DEFAULT_GALLERY = [
-    {
-        "_id": "user_vid_1",
-        "title": "गणेशोत्सव विसर्जन मिरवणूक व्हिडिओ २०२६",
-        "image_url": "/static/uploads/vid_1788933034_WhatsApp_Video_2026-09-09_at_11.15.45_AM.mp4",
-        "type": "video",
-        "mime_type": "video/mp4",
-        "display_order": 1,
-        "year": "2026"
-    }
-]
+DEFAULT_GALLERY = []
 
 def amount_to_marathi_words(amount):
     try:

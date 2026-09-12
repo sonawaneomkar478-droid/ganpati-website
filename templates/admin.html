@@ -6,7 +6,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Khand:wght@600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ cache_bust }}">
 </head>
 <body style="background-color: #f8fafc; color: #1e293b;">
 
@@ -313,6 +313,10 @@
                                 <button onclick="deleteSliderItem('{{ item._id }}', this)" style="color: #dc2626; border: 1px solid #f87171; background: #fef2f2; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-weight: 700;" title="हटवा">🗑️</button>
                             </div>
                         </div>
+                        {% else %}
+                        <div id="noMediaMsg" style="text-align: center; padding: 25px; color: #64748b; background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 12px;">
+                            📷 सध्या स्लाईडरमध्ये कोणतेही फोटो किंवा व्हिडिओ नाहीत. वरील फॉर्ममधून नवीन फोटो किंवा व्हिडिओ जोडा.
+                        </div>
                         {% endfor %}
                     </div>
                 </div>
@@ -320,13 +324,46 @@
             </div>
         </div>
 
-        <!-- TAB 4: MANUAL VARGANI ENTRY (CASH / ONLINE) -->
+        <!-- TAB 4: MANUAL VARGANI ENTRY (CASH / ONLINE QR) -->
         <div id="cashTab" class="tab-content" style="display: none;">
-            <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.2rem; max-width: 500px; margin: 0 auto;">
-                <h2 style="font-family: 'Khand', sans-serif; font-size: 1.4rem; color: #1e293b; margin-bottom: 0.3rem;">💰 वर्गणी नोंदणी (रोख / ऑनलाईन)</h2>
-                <p style="font-size: 0.82rem; color: #64748b; margin-bottom: 1.2rem;">अ‍ॅडमिन येथे रोख (Cash) अथवा ऑनलाईन (GPay/PhonePe/QR/बँक) द्वारे जमा झालेली वर्गणी थेट नोंदवू शकतात.</p>
+            <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.2rem; max-width: 520px; margin: 0 auto; box-shadow: 0 4px 14px rgba(0,0,0,0.06);">
+                <h2 style="font-family: 'Khand', sans-serif; font-size: 1.45rem; color: #1e293b; margin-bottom: 0.2rem;">💰 वर्गणी नोंदणी (रोख / ऑनलाईन QR)</h2>
+                <p style="font-size: 0.82rem; color: #64748b; margin-bottom: 1.2rem;">रोख अथवा ऑनलाईन QR Code द्वारे आलेली वर्गणी येथे नोंदवून थेट पावती द्या.</p>
 
                 <form id="manualVarganiForm">
+                    <div class="input-group">
+                        <label for="manual_payment_mode" class="input-label" style="font-weight: 700; color: #b71c1c; font-size: 0.92rem;">पेमेंट प्रकार निवडा (Select Payment Type) *</label>
+                        <select id="manual_payment_mode" name="payment_mode" class="nova-input" onchange="toggleManualPaymentView(this.value)" style="border: 2px solid #ffb703; font-weight: 700; font-size: 0.95rem; background: #fffdf5;">
+                            <option value="Cash (रोख)">💵 रोख जमा (Cash)</option>
+                            <option value="Online QR Code (ऑनलाईन)">📱 ऑनलाईन QR Code (GPay / PhonePe / Paytm / UPI)</option>
+                            <option value="NetBanking (बँक ट्रान्सफर)">🏦 बँक ट्रान्सफर (Bank Transfer)</option>
+                        </select>
+                    </div>
+
+                    <!-- DYNAMIC QR CODE DISPLAY (SHOWS WHEN ONLINE IS SELECTED) -->
+                    <div id="manualQrBox" style="display: none; text-align: center; background: #fffdf0; border: 2.5px dashed #f59e0b; border-radius: 14px; padding: 1.2rem 1rem; margin-bottom: 1.2rem; box-shadow: 0 4px 12px rgba(245,158,11,0.15);">
+                        <div style="font-weight: 800; color: #b45309; font-size: 1.05rem; margin-bottom: 4px;">
+                            📲 मंडळाचा अधिकृत Payment QR Code
+                        </div>
+                        <p style="font-size: 0.78rem; color: #78350f; margin-bottom: 10px;">
+                            (भाविकाला हा QR Code दाखवा. GPay, PhonePe, Paytm अथवा कोणत्याही UPI App द्वारे स्कॅन करून पेमेंट स्वीकारा)
+                        </p>
+                        <div style="display: inline-block; padding: 10px; background: #ffffff; border-radius: 14px; border: 2px solid #f59e0b; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                            <img src="{{ settings.qr_code_url }}" alt="Mandal Payment QR Code" style="width: 210px; height: 210px; object-fit: contain; display: block; margin: 0 auto; border-radius: 8px;">
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <span style="font-size: 0.85rem; color: #475569;">UPI ID:</span>
+                            <strong style="color: #1d4ed8; background: #dbeafe; padding: 4px 12px; border-radius: 6px; font-size: 0.92rem; user-select: all; display: inline-block; margin-top: 2px;">
+                                {{ settings.upi_id }}
+                            </strong>
+                        </div>
+                        {% if settings.receiver_name %}
+                        <div style="font-size: 0.82rem; color: #1e293b; margin-top: 5px;">
+                            खाते नाव: <strong>{{ settings.receiver_name }}</strong>
+                        </div>
+                        {% endif %}
+                    </div>
+
                     <div class="input-group">
                         <label for="manual_name" class="input-label">वर्गणीदाराचे नाव *</label>
                         <input type="text" id="manual_name" name="name" class="nova-input" placeholder="उदा. श्री. विकास कदम" required>
@@ -347,22 +384,9 @@
                         <input type="number" id="manual_amount" name="amount" class="nova-input" placeholder="उदा. 501" required min="1">
                     </div>
 
-                    <div class="input-group">
-                        <label for="manual_payment_mode" class="input-label">पेमेंट प्रकार (Payment Mode) *</label>
-                        <select id="manual_payment_mode" name="payment_mode" class="nova-input" onchange="toggleManualTxnId(this.value)">
-                            <option value="Cash (रोख)">💵 रोख (Cash जमा)</option>
-                            <option value="Online UPI (GPay / PhonePe / QR)">📱 ऑनलाईन UPI (GPay / PhonePe / QR)</option>
-                            <option value="NetBanking (बँक ट्रान्सफर)">🏦 बँक ट्रान्सफर (NEFT / IMPS / NetBanking)</option>
-                        </select>
-                    </div>
-
-                    <div class="input-group" id="manualTxnGroup" style="display: none;">
-                        <label for="manual_transaction_id" class="input-label">Transaction ID / UTR क्रमांक (पर्यायी)</label>
-                        <input type="text" id="manual_transaction_id" name="transaction_id" class="nova-input" placeholder="उदा. 423987123456 / UTR No.">
-                        <small style="color: #64748b; font-size: 0.75rem;">(ऑनलाईन व्यवहाराचा UTR किंवा Reference नंबर येथे नोंदवा)</small>
-                    </div>
-
-                    <button type="submit" class="btn-nova-submit" style="background: #059669; font-weight: 700; font-size: 1rem;">➕ वर्गणी सेव्ह करा (Save Entry)</button>
+                    <button type="submit" class="btn-nova-submit" style="background: linear-gradient(135deg, #059669, #047857); font-weight: 700; font-size: 1.05rem; padding: 12px; margin-top: 8px;">
+                        ➕ वर्गणी सेव्ह करा (Save & Issue Receipt)
+                    </button>
                 </form>
             </div>
         </div>
@@ -529,16 +553,16 @@
 
     </main>
 
-    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/admin.js') }}?v={{ cache_bust }}"></script>
     <script>
-        // Toggle Transaction ID Field in Manual Vargani Tab
-        function toggleManualTxnId(val) {
-            const grp = document.getElementById('manualTxnGroup');
-            if (grp) {
-                if (val && (val.includes('Online') || val.includes('NetBanking') || val.includes('UPI'))) {
-                    grp.style.display = 'block';
+        // Toggle QR Code Display in Manual Vargani Tab
+        function toggleManualPaymentView(val) {
+            const qrBox = document.getElementById('manualQrBox');
+            if (qrBox) {
+                if (val && (val.includes('Online') || val.includes('QR') || val.includes('NetBanking'))) {
+                    qrBox.style.display = 'block';
                 } else {
-                    grp.style.display = 'none';
+                    qrBox.style.display = 'none';
                 }
             }
         }
@@ -687,7 +711,9 @@
                                     const saveJson = await saveResp.json();
                                     if (saveJson.success) {
                                         alert('✅ फोटो क्लाऊड स्टोरेजवर यशस्वीरित्या अपलोड झाला!');
-                                        window.location.href = window.location.pathname + '?_nocache=' + Date.now();
+                                        try { localStorage.setItem('admin_active_tab', 'sliderTab'); } catch(e) {}
+                                        window.location.href = window.location.pathname + '?_nocache=' + Date.now() + '#sliderTab';
+                                        window.location.reload();
                                     } else {
                                         alert('❌ सेव्ह करताना एरर: ' + saveJson.message);
                                         if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = '➕ स्लाईडर मध्ये जोडा (Upload Media)'; }
@@ -756,7 +782,9 @@
                                     const saveJson = await saveResp.json();
                                     if (saveJson.success) {
                                         alert('✅ मोठा व्हिडिओ क्लाऊड CDN वर यशस्वीरित्या अपलोड झाला!');
-                                        window.location.href = window.location.pathname + '?_nocache=' + Date.now();
+                                        try { localStorage.setItem('admin_active_tab', 'sliderTab'); } catch(e) {}
+                                        window.location.href = window.location.pathname + '?_nocache=' + Date.now() + '#sliderTab';
+                                        window.location.reload();
                                     } else {
                                         alert('❌ सेव्ह एरर: ' + saveJson.message);
                                         if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = '➕ स्लाईडर मध्ये जोडा (Upload Media)'; }
@@ -825,7 +853,9 @@
                             if (data.success) {
                                 if (progressStatus) progressStatus.innerText = '✅ अपलोड यशस्वी झाले!';
                                 alert('✅ स्लाईडर फोटो/व्हिडिओ यशस्वीरित्या जोडला गेला!');
-                                window.location.href = window.location.pathname + '?_nocache=' + Date.now();
+                                try { localStorage.setItem('admin_active_tab', 'sliderTab'); } catch(e) {}
+                                window.location.href = window.location.pathname + '?_nocache=' + Date.now() + '#sliderTab';
+                                window.location.reload();
                             } else {
                                 if (progressBox) progressBox.style.display = 'none';
                                 alert('❌ एरर: ' + data.message);
