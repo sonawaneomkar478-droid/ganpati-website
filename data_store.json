@@ -30,6 +30,20 @@
   ],
   "vargani_records": [
     {
+      "_id": "6aa4de0562e8e19bfbb6da88",
+      "receipt_no": "VRG-2026-0030",
+      "name": "टेस्ट रोख भाविक",
+      "mobile": "9876543210",
+      "address": "पुणे",
+      "amount": 251,
+      "payment_mode": "Cash (रोख)",
+      "transaction_id": "ADMIN-CASH",
+      "status": "Verified",
+      "screenshot_url": "",
+      "created_at_str": "12-09-2026 10:37 AM",
+      "created_at": "2026-09-12 10:37:17"
+    },
+    {
       "_id": "6aa3b365599edf3bbd9dc2ed",
       "receipt_no": "VRG-2026-0029",
       "name": "राम शर्मा (Test)",
