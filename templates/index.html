@@ -330,6 +330,10 @@
 
         function initSmartSlider() {
             if (slides.length === 0) return;
+            if (slides.length <= 1) {
+                const arrows = document.querySelectorAll('.slider-arrow');
+                arrows.forEach(a => a.style.display = 'none');
+            }
             showSlide(0);
         }
 
@@ -337,6 +341,17 @@
             if (slides.length === 0) return;
 
             if (slideTimer) clearTimeout(slideTimer);
+
+            // If only 1 slide, activate it once cleanly without flicker or timer loop
+            if (slides.length === 1) {
+                slides[0].classList.add('active');
+                const singleVid = slides[0].querySelector('video');
+                if (singleVid) {
+                    singleVid.muted = !userHasInteracted;
+                    singleVid.play().catch(e => console.log('Single video autoplay handled:', e));
+                }
+                return;
+            }
 
             // PAUSE and MUTE ALL non-active videos immediately when slide transitions
             slides.forEach((s, idx) => {

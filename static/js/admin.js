@@ -122,22 +122,49 @@ document.addEventListener('DOMContentLoaded', () => {
     if (frontPageForm) {
         frontPageForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const submitBtn = frontPageForm.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerText = '⏳ मुख्य पान सेव्ह होत आहे...';
+            }
+
             const formData = new FormData(frontPageForm);
+            const photoInput = document.getElementById('fp_entrance_photo');
+            if (photoInput && photoInput.files && photoInput.files[0] && typeof compressImageClient === 'function') {
+                try {
+                    if (submitBtn) submitBtn.innerText = '⚡ फोटो ऑप्टिमाइझ होत आहे...';
+                    const compressed = await compressImageClient(photoInput.files[0], 1600, 0.82);
+                    formData.set('entrance_photo', compressed);
+                } catch(err) {
+                    console.log('Compression fallback:', err);
+                }
+            }
 
             try {
+                if (submitBtn) submitBtn.innerText = '☁️ माहिती सेव्ह होत आहे...';
                 const res = await fetch('/api/settings', {
                     method: 'POST',
                     body: formData
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert('✅ मुख्य पानाची माहिती (Front Page Info) अपडेट झाली!');
+                    alert('✅ मुख्य पानाची माहिती (Front Page Info) व फोटो यशस्वीरित्या अपडेट झाली!');
+                    try { localStorage.setItem('admin_active_tab', 'frontPageTab'); } catch(e) {}
+                    location.hash = 'frontPageTab';
                     location.reload();
                 } else {
                     alert('❌ एरर: ' + data.message);
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = '💾 मुख्य पान बदला (Save Front Page Changes)';
+                    }
                 }
             } catch (e) {
-                alert('❌ नेटवर्क एरर');
+                alert('❌ नेटवर्क एरर! फाईल साईज मोठी असू शकते, कृपया लहान फोटो वापरा.');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = '💾 मुख्य पान बदला (Save Front Page Changes)';
+                }
             }
         });
     }
@@ -147,7 +174,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (settingsForm) {
         settingsForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const submitBtn = settingsForm.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerText = '⏳ सेव्ह होत आहे...';
+            }
+
             const formData = new FormData(settingsForm);
+            const qrInput = document.getElementById('qr_code');
+            if (qrInput && qrInput.files && qrInput.files[0] && typeof compressImageClient === 'function') {
+                try {
+                    if (submitBtn) submitBtn.innerText = '⚡ QR Code ऑप्टिमाइझ होत आहे...';
+                    const compressedQr = await compressImageClient(qrInput.files[0], 1200, 0.85);
+                    formData.set('qr_code', compressedQr);
+                } catch(err) {
+                    console.log('QR compression fallback:', err);
+                }
+            }
 
             try {
                 const res = await fetch('/api/settings', {
@@ -157,12 +200,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json();
                 if (data.success) {
                     alert('✅ मंडळ माहिती व QR Code अपडेट झाला!');
+                    try { localStorage.setItem('admin_active_tab', 'settingsTab'); } catch(e) {}
+                    location.hash = 'settingsTab';
                     location.reload();
                 } else {
                     alert('❌ एरर: ' + data.message);
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = '💾 माहिती सेव्ह करा (Save Settings)';
+                    }
                 }
             } catch (e) {
-                alert('❌ नेटवर्क एरर');
+                alert('❌ नेटवर्क एरर! कृपया पुन्हा प्रयत्न करा.');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = '💾 माहिती सेव्ह करा (Save Settings)';
+                }
             }
         });
     }

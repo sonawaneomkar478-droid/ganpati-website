@@ -582,36 +582,21 @@ def delete_gallery_item(item_id):
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
-# API: SETTINGS
 @app.route('/api/settings', methods=['GET', 'POST'])
 def manage_settings():
     if request.method == 'POST':
-        try:
-            mandal_name = request.form.get('mandal_name', '')
-            tagline = request.form.get('tagline', '')
-            entrance_shloka = request.form.get('entrance_shloka', '')
-            upi_id = request.form.get('upi_id', '')
-            receiver_name = request.form.get('receiver_name', '')
-            phone_number = request.form.get('phone_number', '')
-            address = request.form.get('address', '')
-            contact_name2 = request.form.get('contact_name2', '')
-            contact_phone2 = request.form.get('contact_phone2', '')
-            contact_name3 = request.form.get('contact_name3', '')
-            contact_phone3 = request.form.get('contact_phone3', '')
+        if 'user' not in session or session.get('role') != 'admin':
+            return jsonify({'success': False, 'message': 'अनधिकृत प्रवेश'}), 403
 
-            update_data = {
-                'mandal_name': mandal_name,
-                'tagline': tagline,
-                'entrance_shloka': entrance_shloka,
-                'upi_id': upi_id,
-                'receiver_name': receiver_name,
-                'phone_number': phone_number,
-                'address': address,
-                'contact_name2': contact_name2,
-                'contact_phone2': contact_phone2,
-                'contact_name3': contact_name3,
-                'contact_phone3': contact_phone3
-            }
+        try:
+            update_data = {}
+            for field in [
+                'mandal_name', 'tagline', 'entrance_shloka', 'upi_id', 
+                'receiver_name', 'phone_number', 'address', 
+                'contact_name2', 'contact_phone2', 'contact_name3', 'contact_phone3'
+            ]:
+                if field in request.form:
+                    update_data[field] = request.form[field].strip()
 
             if 'qr_code' in request.files and request.files['qr_code'].filename:
                 saved_qr = save_uploaded_media(request.files['qr_code'], prefix="qr")
@@ -624,7 +609,7 @@ def manage_settings():
                     update_data['entrance_photo_url'] = saved_ent
 
             updated = db.update_settings(update_data)
-            return jsonify({'success': True, 'message': 'मंडळ माहिती, प्रवेशद्वार फोटो व QR Code अपडेट झाला!', 'settings': updated})
+            return jsonify({'success': True, 'message': 'मंडळ माहिती, मुख्य पान व QR Code यशस्वीरित्या अपडेट झाला!', 'settings': updated})
         except Exception as e:
             return jsonify({'success': False, 'message': str(e)}), 500
     else:
