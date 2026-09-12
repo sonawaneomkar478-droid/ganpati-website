@@ -125,7 +125,7 @@ def serve_media_db(media_id):
             resp = Response(data, 200, mimetype=content_type)
             resp.headers['Content-Length'] = str(file_size)
             resp.headers['Accept-Ranges'] = 'bytes'
-            resp.headers['Cache-Control'] = 'public, max-age=2592000, immutable'
+            resp.headers['Cache-Control'] = 'public, max-age=86400, stale-while-revalidate=43200'
             return resp
 
         # HTTP Range Header Support (Crucial for Video Playback & Seeking on Mobile/Desktop)
@@ -152,7 +152,7 @@ def serve_media_db(media_id):
         resp.headers['Content-Range'] = f'bytes {byte1}-{byte2}/{file_size}'
         resp.headers['Accept-Ranges'] = 'bytes'
         resp.headers['Content-Length'] = str(length)
-        resp.headers['Cache-Control'] = 'public, max-age=2592000, immutable'
+        resp.headers['Cache-Control'] = 'public, max-age=86400, stale-while-revalidate=43200'
         return resp
     except Exception as e:
         print(f"Error serving media {media_id}: {e}")

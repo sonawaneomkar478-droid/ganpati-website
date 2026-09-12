@@ -692,9 +692,21 @@ def delete_gallery_item(item_id):
     """
     item_id_str = str(item_id).strip()
 
-    # Find the target item to retrieve its URLs
-    existing_items = get_gallery()
-    target_item = next((item for item in existing_items if str(item.get("_id")).strip() == item_id_str), None)
+    # Find the target item directly in MongoDB Atlas or cached gallery to retrieve its URLs
+    target_item = None
+    try:
+        db_conn = get_db()
+        if db_conn is not None:
+            if len(item_id_str) == 24:
+                target_item = db_conn.gallery.find_one({"_id": ObjectId(item_id_str)})
+            if not target_item:
+                target_item = db_conn.gallery.find_one({"_id": item_id_str})
+    except Exception as e:
+        print(f"MongoDB target_item lookup error: {e}")
+
+    if not target_item:
+        existing_items = get_gallery()
+        target_item = next((item for item in existing_items if str(item.get("_id")).strip() == item_id_str), None)
 
     if target_item:
         img_url = target_item.get("image_url", "")
